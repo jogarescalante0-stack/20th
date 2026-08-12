@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Happy Monthsary ❤️</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,500&family=Caveat:wght@500;600;700&family=Nunito+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Floating hearts layer -->
+<div class="particle-layer" id="particleLayer" aria-hidden="true"></div>
+
+<!-- Toast notifications -->
+<div class="toast" id="toast" hidden></div>
+
+<!-- ============================================================ -->
+<!-- CONTROL BAR — always available, lets you switch Edit/Preview,  -->
+<!-- save, and clear data. Works on every screen.                   -->
+<!-- ============================================================ -->
+<div class="control-bar" id="controlBar">
+  <button class="ctrl-btn" id="editToggleBtn" type="button">✎ Edit</button>
+  <button class="ctrl-btn ctrl-save" id="saveBtn" type="button">💾 Save</button>
+  <button class="ctrl-btn ctrl-danger" id="clearBtn" type="button">🗑 Clear All</button>
+  <button class="music-toggle" id="musicToggle" type="button" aria-label="Toggle background music" hidden>
+    <span class="music-icon">♪</span>
+  </button>
+</div>
+<!-- ==================================================================
+     🎵 MONTHSARY MUSIC FILE
+     Replace the filename below with your own music file
+     ==================================================================
+     This <audio> element has no visual box of its own — it just plays
+     in the background. Put your song at music/monthsary.mp3 (or edit
+     the src below to match whatever filename/path you use).
+     ================================================================== -->
+<audio id="monthsaryMusic" preload="auto" loop>
+  <!-- 🎵 CHANGE THIS TO YOUR ACTUAL MUSIC FILE -->
+  <source src="music/monthsary.mp3" type="audio/mpeg">
+</audio>
+<!-- ================================================================== -->
+
+<!-- Hidden file inputs reused by JS for single-image uploads -->
+<input type="file" id="hiddenImageInput" accept="image/*" hidden />
+
+<!-- ============================================================ -->
+<!-- LANDING SCREEN                                                -->
+<!-- ============================================================ -->
+<section class="screen landing" id="landingScreen">
+  <div class="landing-inner">
+    <p class="eyebrow editable" contenteditable="false" data-bind="opening.eyebrow" data-placeholder="a little something for you">a little something for you</p>
+    <h1 class="landing-title">
+      Happy <span class="editable" contenteditable="false" data-bind="opening.monthsary" data-placeholder="19th">19th</span> Monthsary <span class="heart">❤️</span>
+    </h1>
+    <p class="landing-subtitle editable" contenteditable="false" data-bind="opening.message" data-placeholder="Enter your opening message here...">19 months, countless memories, and a love story still being written&hellip;</p>
+    <button class="btn btn-primary" id="openLetterBtn" type="button">Open My Letter <span aria-hidden="true">💌</span></button>
+  </div>
+  <div class="landing-glow" aria-hidden="true"></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- ENVELOPE SCREEN                                               -->
+<!-- ============================================================ -->
+<section class="screen envelope-screen" id="envelopeScreen" hidden>
+  <p class="envelope-instruction">Click the envelope to open your letter</p>
+
+  <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Open the envelope">
+    <div class="envelope-shadow"></div>
+    <div class="envelope-body">
+      <div class="envelope-back"></div>
+      <div class="envelope-letter-peek"></div>
+      <div class="envelope-flap"></div>
+      <div class="wax-seal"><span>❤</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- MAIN CONTENT                                                  -->
+<!-- ============================================================ -->
+<main id="mainContent" hidden>
+
+  <button class="replay-btn" id="replayBtn" type="button" title="Replay envelope animation">↺ Replay envelope</button>
+
+  <!-- SECTION: THE LOVE LETTER -->
+  <section class="section letter-section" id="letterSection">
+    <div class="paper-card letter-card">
+      <p class="letter-to">To
+        <span class="editable" contenteditable="false" data-bind="letter.to" data-placeholder="Enter name">My Love</span>,
+      </p>
+
+      <div class="letter-body editable" contenteditable="false" data-bind="letter.body" data-placeholder="Type your entire love letter here..." id="letterBody"></div>
+
+      <div class="letter-footer">
+        <p class="letter-date editable" contenteditable="false" data-bind="letter.date" data-placeholder="Enter date">August 8, 2026</p>
+        <p class="letter-signature">Forever yours, <span class="editable" contenteditable="false" data-bind="letter.signature" data-placeholder="Enter your name">Me</span> <span class="heart">❤️</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION: 12 MONTHS TIMELINE -->
+  <section class="section timeline-section reveal" id="timelineSection">
+    <h2 class="section-title">Our 19 Months Together</h2>
+    <p class="section-subtitle">Tap a month to relive it — click ✎ to edit</p>
+    <div class="timeline" id="timeline"><!-- 12 month cards injected by script.js --></div>
+  </section>
+
+  <!-- SECTION: PHOTO MEMORIES -->
+  <section class="section gallery-section reveal" id="gallerySection">
+    <h2 class="section-title">Photo Memories</h2>
+    <p class="section-subtitle">Every picture, a little piece of us</p>
+
+    <button class="upload-label edit-only" id="addGalleryPhotoBtn" type="button" hidden>+ Add Photo</button>
+
+    <div class="gallery-grid" id="galleryGrid"><!-- gallery items injected by script.js --></div>
+  </section>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close photo viewer">&times;</button>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="" />
+    <p class="lightbox-caption" id="lightboxCaption"></p>
+  </div>
+
+  <!-- SECTION: 12 REASONS -->
+  <section class="section reasons-section reveal" id="reasonsSection">
+    <h2 class="section-title">12 Reasons Why I Love You <span class="heart">❤️</span></h2>
+    <div class="reasons-grid" id="reasonsGrid"><!-- reason cards injected by script.js --></div>
+  </section>
+
+  <!-- SECTION: POLAROID WALL -->
+  <section class="section polaroid-section reveal" id="polaroidSection">
+    <h2 class="section-title">Our Memory Wall</h2>
+    <button class="upload-label edit-only" id="addPolaroidBtn" type="button" hidden>+ Add Memory</button>
+    <div class="polaroid-wall" id="polaroidWall"><!-- polaroids injected by script.js --></div>
+  </section>
+
+  <!-- SECTION: LOVE QUESTION -->
+  <section class="section question-section reveal" id="questionSection">
+    <p class="question-eyebrow">After <span class="editable" contenteditable="false" data-bind="opening.monthsaryNumberWord" data-placeholder="19 months">19 months</span>&hellip;</p>
+    <h2 class="question-title">Would you choose me again? <span class="heart">❤️</span></h2>
+    <div class="question-buttons">
+      <button class="btn btn-primary btn-large" id="yesBtn" type="button">YES <span aria-hidden="true">❤️</span></button>
+      <button class="btn btn-ghost" id="noBtn" type="button">No</button>
+    </div>
+    <div class="question-answer" id="questionAnswer" hidden>
+      <p>Then let's keep choosing each other, again and again. <span class="heart">❤️</span></p>
+    </div>
+  </section>
+
+  <!-- SECTION: FINAL MESSAGE -->
+  <section class="section final-section reveal" id="finalSection">
+    <p class="final-line-1 editable" contenteditable="false" data-bind="final.small" data-placeholder="Enter a small message">19 months down&hellip;</p>
+    <p class="final-line-2 editable" contenteditable="false" data-bind="final.main" data-placeholder="Enter your final message">&hellip;and hopefully, a lifetime to go. ❤️</p>
+    <h2 class="final-headline">Happy Monthsary, my love.</h2>
+    <footer class="site-footer">Made with love by
+      <span class="editable" contenteditable="false" data-bind="final.signature" data-placeholder="your name">Me</span>
+      <span class="heart">❤️</span>
+    </footer>
+  </section>
+
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
