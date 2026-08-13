@@ -330,6 +330,28 @@ body.editing .remove-item-btn { display: flex; }
 .envelope.opened .wax-seal { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
 .envelope.opened .envelope-letter-peek { transform: translateY(-38%); }
 
+/* Gentle idle motion so the envelope feels alive while waiting to be
+   clicked — stops automatically once opened (scoped via :not(.opened)),
+   and respects people who've asked their OS to reduce motion. */
+@keyframes envelope-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(-1.1deg); }
+}
+@keyframes envelope-shadow-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.86); }
+}
+@keyframes seal-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.08); }
+}
+.envelope:not(.opened) { animation: envelope-float 3.6s ease-in-out infinite; }
+.envelope:not(.opened) .envelope-shadow { animation: envelope-shadow-breathe 3.6s ease-in-out infinite; }
+.envelope:not(.opened) .wax-seal { animation: seal-pulse 2.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .envelope, .envelope-shadow, .wax-seal { animation: none !important; }
+}
+
 /* ================= MAIN ================= */
 main { position: relative; }
 .section { padding: var(--section-pad) 20px; max-width: 980px; margin: 0 auto; }
