@@ -297,6 +297,7 @@ function setupEnvelope() {
     // what lets the browser allow audio to start playing.
     if (typeof window.attemptMusicAutoplay === "function") window.attemptMusicAutoplay();
     envelope.classList.add("opened");
+    burstHearts(6);
 
     // Primary: wait for the flap's own transform transition to actually finish.
     const onFlapTransitionEnd = (e) => {
