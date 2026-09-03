@@ -41,7 +41,7 @@
      ================================================================== -->
 <audio id="monthsaryMusic" preload="auto" loop>
   <!-- 🎵 CHANGE THIS TO YOUR ACTUAL MUSIC FILE -->
-  <source src="monthsary.mp3" type="audio/mpeg">
+  <source src="music/monthsary.mp3" type="audio/mpeg">
 </audio>
 <!-- ================================================================== -->
 
@@ -67,6 +67,20 @@
 <!-- ENVELOPE SCREEN                                               -->
 <!-- ============================================================ -->
 <section class="screen envelope-screen" id="envelopeScreen" hidden>
+  <!-- ==================================================================
+       🎬 ENVELOPE BACKGROUND VIDEO
+       Replace the filename below with your own video file
+       ==================================================================
+       This video plays behind the envelope only (not the rest of the
+       site). It autoplays muted and loops, which is what lets it
+       autoplay on phones without the user having to tap anything.
+       ================================================================== -->
+  <video class="envelope-bg-video" autoplay muted loop playsinline>
+    <!-- 🎬 CHANGE THIS TO YOUR ACTUAL VIDEO FILE -->
+    <source src="video/envelope-bg.mp4" type="video/mp4">
+  </video>
+  <!-- ================================================================== -->
+
   <p class="envelope-instruction">Click the envelope to open your letter</p>
 
   <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Open the envelope">
