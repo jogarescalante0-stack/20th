@@ -20,9 +20,9 @@ function makeDefaultState() {
   return {
     opening: {
       eyebrow: "a little something for you",
-      monthsary: "19th",
-      message: "19 months, countless memories, and a love story still being written…",
-      monthsaryNumberWord: "19 months"
+      monthsary: "20th",
+      message: "20 months, countless memories, and a love story still being written…",
+      monthsaryNumberWord: "20 months"
     },
     letter: {
       to: "My Love",
@@ -53,7 +53,8 @@ function makeDefaultState() {
       { title: "Little Adventures",   message: "More trips, more firsts, more reasons to smile.", image: null, caption: "" },
       { title: "Deeper Still",        message: "Falling deeper, little by little, month by month.", image: null, caption: "" },
       { title: "A Year and a Half",   message: "18 months in, and still one of my favorite chapters.", image: null, caption: "" },
-      { title: "Nineteen",            message: "19 months in, and it still feels like the best decision I ever made.", image: null, caption: "" }
+      { title: "Nineteen",            message: "19 months in, and still falling for you all over again.", image: null, caption: "" },
+      { title: "Twenty",              message: "20 months in, and it still feels like the best decision I ever made.", image: null, caption: "" }
     ],
     gallery: [
       { image: null, caption: "First Date" },
@@ -75,7 +76,7 @@ function makeDefaultState() {
       { image: null, caption: "Us." }
     ],
     final: {
-      small: "19 months down…",
+      small: "20 months down…",
       main: "…and hopefully, a lifetime to go. ❤️",
       signature: "Me"
     }

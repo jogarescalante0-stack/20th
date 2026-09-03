@@ -3,15 +3,18 @@
    ================================================================ */
 
 :root {
-  --cream:        #FBF3EA;
-  --paper:        #FFFCF7;
-  --blush:        #F3D9DD;
-  --rose:         #C96A80;
-  --deep-rose:    #A8455D;
+  /* Retheme note: variable names below are historical (from the original
+     pink palette) but now hold sky-blue values — kept as-is rather than
+     renamed everywhere, so this is a value swap, not a rename refactor. */
+  --cream:        #EAF4FB;
+  --paper:        #FCFEFF;
+  --blush:        #D9EEFB;
+  --rose:         #4A9FD8;
+  --deep-rose:    #1F6690;
   --gold:         #C9A66B;
-  --ink:          #4A3636;
-  --ink-soft:     #7A6060;
-  --shadow-color: 350 30% 60%;
+  --ink:          #33424F;
+  --ink-soft:     #5C7186;
+  --shadow-color: 205 40% 45%;
 
   --font-display: 'Cormorant Garamond', serif;
   --font-script:  'Caveat', cursive;
@@ -181,7 +184,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 body.editing .editable[contenteditable="true"] {
   outline: 2px dashed var(--rose);
   outline-offset: 3px;
-  background: hsl(350 60% 97%);
+  background: hsl(205 60% 97%);
   cursor: text;
 }
 body.editing .editable[contenteditable="true"]:focus {
@@ -271,7 +274,7 @@ body.editing .remove-item-btn { display: flex; }
 .eyebrow { font-family: var(--font-script); font-size: 1.4rem; color: var(--deep-rose); margin-bottom: 6px; display: inline-block; }
 .landing-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.6rem, 8vw, 4.4rem); color: var(--deep-rose); line-height: 1.15; margin-bottom: 18px; }
 .landing-subtitle { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--ink-soft); margin-bottom: 36px; font-style: italic; display: block; }
-.landing-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, hsl(350 70% 85% / 0.5), transparent 60%); pointer-events: none; }
+.landing-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, hsl(205 70% 85% / 0.5), transparent 60%); pointer-events: none; }
 
 /* ================= ENVELOPE ================= */
 .envelope-screen {
@@ -406,8 +409,8 @@ main { position: relative; }
 .letter-section { padding-top: clamp(90px, 10vw, 120px); }
 .letter-card {
   padding: clamp(28px, 6vw, 60px);
-  background: repeating-linear-gradient(var(--paper) 0px, var(--paper) 38px, #F3E7DC 39px);
-  border: 1px solid #EEDFD2;
+  background: repeating-linear-gradient(var(--paper) 0px, var(--paper) 38px, #DCEEF9 39px);
+  border: 1px solid #CFE3F0;
 }
 .letter-to { font-family: var(--font-script); font-size: clamp(1.6rem, 4vw, 2.2rem); color: var(--deep-rose); margin-bottom: 18px; }
 .letter-body {
