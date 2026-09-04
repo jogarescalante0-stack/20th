@@ -363,6 +363,118 @@ function renderTimeline() {
 
   container.querySelectorAll("[data-bind]").forEach(el => updateEmptyState(el, el.innerText));
   applyEditModeToNewNodes(container);
+  setupTimelineCarousel();
+}
+
+/* ================================================================
+   TIMELINE CAROUSEL (swipe/drag navigation between months)
+   The horizontal scrolling + snapping itself is native CSS
+   (scroll-snap-type), which is what gives real touch-drag/swipe
+   behavior for free and avoids the common bugs of hand-rolled touch
+   handlers (like breaking taps on things inside the card). This
+   function just wires up the dots, the arrow buttons, and tracks
+   which card is currently centered so it can play the page-turn
+   sound on genuine navigation (not on initial load).
+   ================================================================ */
+let timelineObserver = null;
+function setupTimelineCarousel() {
+  const track = document.getElementById("timeline");
+  const dotsWrap = document.getElementById("timelineDots");
+  const prevBtn = document.getElementById("monthPrevBtn");
+  const nextBtn = document.getElementById("monthNextBtn");
+  if (!track || !dotsWrap) return;
+
+  const cards = Array.from(track.querySelectorAll(".month-card"));
+  if (!cards.length) { dotsWrap.innerHTML = ""; return; }
+
+  dotsWrap.innerHTML = cards.map((_, i) =>
+    `<button type="button" class="timeline-dot${i === 0 ? " active" : ""}" data-goto="${i}" aria-label="Go to month ${i + 1}"></button>`
+  ).join("");
+  const dots = Array.from(dotsWrap.querySelectorAll(".timeline-dot"));
+
+  let activeIndex = 0;
+  let isFirstObservation = true;
+  let lastSoundAt = 0;
+
+  function setActive(index) {
+    if (index === activeIndex) return;
+    activeIndex = index;
+    dots.forEach((dot, i) => dot.classList.toggle("active", i === index));
+    if (prevBtn) prevBtn.disabled = index === 0;
+    if (nextBtn) nextBtn.disabled = index === cards.length - 1;
+    if (!isFirstObservation) {
+      const now = Date.now();
+      if (now - lastSoundAt > 150) { // guards against rapid-swipe sound spam
+        playPageTurnSound();
+        lastSoundAt = now;
+      }
+    }
+  }
+
+  if (timelineObserver) timelineObserver.disconnect();
+  timelineObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+        setActive(cards.indexOf(entry.target));
+      }
+    });
+    isFirstObservation = false;
+  }, { root: track, threshold: 0.6 });
+  cards.forEach(card => timelineObserver.observe(card));
+
+  if (prevBtn) {
+    prevBtn.disabled = true;
+    prevBtn.onclick = () => cards[Math.max(0, activeIndex - 1)].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }
+  if (nextBtn) {
+    nextBtn.disabled = cards.length <= 1;
+    nextBtn.onclick = () => cards[Math.min(cards.length - 1, activeIndex + 1)].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }
+  dots.forEach(dot => {
+    dot.onclick = () => cards[Number(dot.dataset.goto)].scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  });
+}
+
+/* ================================================================
+   PAGE-TURN SOUND EFFECT
+   A tiny synthesized "whoosh" (filtered white noise) — no audio file
+   needed, so it works immediately. Plays when swiping/tapping
+   between months. Wrapped in try/catch so unsupported or blocked
+   Web Audio never breaks navigation itself.
+   ================================================================ */
+let pageTurnAudioCtx = null;
+function playPageTurnSound() {
+  try {
+    pageTurnAudioCtx = pageTurnAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = pageTurnAudioCtx;
+    const duration = 0.22;
+    const bufferSize = Math.floor(ctx.sampleRate * duration);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      const t = i / bufferSize;
+      const envelope = Math.sin(Math.PI * t); // smooth rise and fall, no click at start/end
+      data[i] = (Math.random() * 2 - 1) * envelope * 0.45;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.Q.value = 0.7;
+    filter.frequency.setValueAtTime(1100, ctx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(2400, ctx.currentTime + duration * 0.5);
+    filter.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + duration);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
+
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start();
+    noise.stop(ctx.currentTime + duration);
+  } catch (err) {
+    // Web Audio unsupported/blocked — silently skip, never break the page
+  }
 }
 
 function renderGallery() {
@@ -613,20 +725,57 @@ function closeLightbox() {
 /* ================================================================
    LOVE QUESTION
    ================================================================ */
+// 🗓️ Change this to your actual next monthsary date if it ever moves.
+const NEXT_MONTHSARY_DATE = new Date("2026-10-09T00:00:00");
+
 function setupLoveQuestion() {
   const yesBtn = document.getElementById("yesBtn");
   const noBtn = document.getElementById("noBtn");
   const answer = document.getElementById("questionAnswer");
 
+  let countdownStarted = false;
   yesBtn.addEventListener("click", () => {
     answer.hidden = false;
     burstHearts(24);
+    if (!countdownStarted) {
+      countdownStarted = true;
+      startNextMonthsaryCountdown();
+    }
   });
 
   noBtn.addEventListener("click", () => {
     noBtn.textContent = "Are you sure? 🥺";
     setTimeout(() => { noBtn.textContent = "No"; }, 1500);
   });
+}
+
+function startNextMonthsaryCountdown() {
+  const daysEl = document.getElementById("cdDays");
+  const hoursEl = document.getElementById("cdHours");
+  const minutesEl = document.getElementById("cdMinutes");
+  const secondsEl = document.getElementById("cdSeconds");
+  const labelEl = document.querySelector(".countdown-label");
+  if (!daysEl) return;
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  function tick() {
+    const diff = NEXT_MONTHSARY_DATE.getTime() - Date.now();
+    if (diff <= 0) {
+      if (labelEl) labelEl.textContent = "Happy monthsary! 🎉";
+      daysEl.textContent = hoursEl.textContent = minutesEl.textContent = secondsEl.textContent = "00";
+      clearInterval(intervalId);
+      return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    daysEl.textContent = pad(Math.floor(totalSeconds / 86400));
+    hoursEl.textContent = pad(Math.floor((totalSeconds % 86400) / 3600));
+    minutesEl.textContent = pad(Math.floor((totalSeconds % 3600) / 60));
+    secondsEl.textContent = pad(totalSeconds % 60);
+  }
+
+  tick();
+  const intervalId = setInterval(tick, 1000);
 }
 
 /* ================================================================

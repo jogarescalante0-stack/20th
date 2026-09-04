@@ -41,7 +41,7 @@
      ================================================================== -->
 <audio id="monthsaryMusic" preload="auto" loop>
   <!-- 🎵 CHANGE THIS TO YOUR ACTUAL MUSIC FILE -->
-  <source src="monthsary.mp3" type="audio/mpeg">
+  <source src="music/monthsary.mp3" type="audio/mpeg">
 </audio>
 <!-- ================================================================== -->
 
@@ -77,7 +77,7 @@
        ================================================================== -->
   <video class="envelope-bg-video" autoplay muted loop playsinline>
     <!-- 🎬 CHANGE THIS TO YOUR ACTUAL VIDEO FILE -->
-    <source src="monthsary.mp4" type="video/mp4">
+    <source src="video/envelope-bg.mp4" type="video/mp4">
   </video>
   <!-- ================================================================== -->
 
@@ -117,11 +117,16 @@
     </div>
   </section>
 
-  <!-- SECTION: 12 MONTHS TIMELINE -->
+  <!-- SECTION: 20 MONTHS TIMELINE -->
   <section class="section timeline-section reveal" id="timelineSection">
     <h2 class="section-title">Our 20 Months Together</h2>
-    <p class="section-subtitle">Tap a month to relive it — click ✎ to edit</p>
-    <div class="timeline" id="timeline"><!-- 12 month cards injected by script.js --></div>
+    <p class="section-subtitle">Swipe to browse — tap a month to relive it, click ✎ to edit</p>
+    <div class="timeline-carousel">
+      <button class="carousel-arrow carousel-arrow-prev" id="monthPrevBtn" type="button" aria-label="Previous month">‹</button>
+      <div class="timeline" id="timeline"><!-- month cards injected by script.js --></div>
+      <button class="carousel-arrow carousel-arrow-next" id="monthNextBtn" type="button" aria-label="Next month">›</button>
+    </div>
+    <div class="timeline-dots" id="timelineDots"></div>
   </section>
 
   <!-- SECTION: PHOTO MEMORIES -->
@@ -164,6 +169,20 @@
     </div>
     <div class="question-answer" id="questionAnswer" hidden>
       <p>Then let's keep choosing each other, again and again. <span class="heart">❤️</span></p>
+      <!-- ==================================================================
+           🗓️ NEXT MONTHSARY COUNTDOWN
+           Counts down to the fixed date set in script.js (NEXT_MONTHSARY_DATE).
+           Starts ticking the moment "YES" is clicked.
+           ================================================================== -->
+      <div class="countdown" id="nextMonthsaryCountdown">
+        <p class="countdown-label">Next monthsary in</p>
+        <div class="countdown-grid">
+          <div class="countdown-unit"><span class="countdown-value" id="cdDays">00</span><span class="countdown-unit-label">Days</span></div>
+          <div class="countdown-unit"><span class="countdown-value" id="cdHours">00</span><span class="countdown-unit-label">Hours</span></div>
+          <div class="countdown-unit"><span class="countdown-value" id="cdMinutes">00</span><span class="countdown-unit-label">Minutes</span></div>
+          <div class="countdown-unit"><span class="countdown-value" id="cdSeconds">00</span><span class="countdown-unit-label">Seconds</span></div>
+        </div>
+      </div>
     </div>
   </section>
 
