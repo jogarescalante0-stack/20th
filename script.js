@@ -260,6 +260,7 @@ function setupLanding() {
 
   btn.addEventListener("click", () => {
     landing.classList.add("fade-out");
+    window.dispatchEvent(new Event("monthsary:leavingLanding"));
     setTimeout(() => {
       landing.hidden = true;
       envelopeScreen.hidden = false;
