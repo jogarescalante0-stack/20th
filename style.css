@@ -96,6 +96,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   border-radius: 999px;
   transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-primary {
   background: linear-gradient(135deg, var(--rose), var(--deep-rose));
@@ -273,13 +274,11 @@ body.editing .remove-item-btn { display: flex; }
 .flower-bg-canvas {
   position: absolute; inset: 0; width: 100%; height: 100%;
   display: block; z-index: 0; cursor: pointer;
-}
-.flower-bg-toggle {
-  position: absolute; left: 14px; bottom: 14px; z-index: 2;
-  font-family: var(--font-body); font-size: 0.75rem; color: var(--ink-soft);
-  background: hsl(0 0% 100% / 0.6); border: none; border-radius: 999px;
-  padding: 6px 14px; cursor: pointer; text-decoration: underline;
-  user-select: none;
+  /* Android Chrome shows a translucent blue flash on any tapped element
+     by default — that's what was showing up over the flowers on tap.
+     This turns that default highlight off. */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .eyebrow { font-family: var(--font-script); font-size: 1.4rem; color: var(--deep-rose); margin-bottom: 6px; display: inline-block; }
