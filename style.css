@@ -306,18 +306,25 @@ body.editing .remove-item-btn { display: flex; }
   z-index: 0;
   pointer-events: none; /* video is decorative only — never intercepts clicks */
 }
-/* Soft scrim so the envelope + text stay readable over any video content,
-   without hiding the video itself. */
+/* Scrim so the envelope + text stay readable over any video content —
+   strengthened with a soft blur so a busy/cluttered video (lots of small
+   photos, high contrast) can't compete with the text on top of it. The
+   video's color and motion still show through, just softened. */
 .envelope-screen::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 45%, hsl(205 40% 96% / 0.55), hsl(205 40% 92% / 0.75));
+  background: radial-gradient(circle at 50% 45%, hsl(205 40% 96% / 0.8), hsl(205 40% 92% / 0.9));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 0;
   pointer-events: none;
 }
 .envelope-instruction, .envelope { position: relative; z-index: 1; }
-.envelope-instruction { font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose); }
+.envelope-instruction {
+  font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
+  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
+}
 
 .envelope {
   width: min(340px, 82vw);
