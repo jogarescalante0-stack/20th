@@ -309,7 +309,11 @@ body.editing .remove-item-btn { display: flex; }
 /* Scrim so the envelope + text stay readable over any video content —
    strengthened with a soft blur so a busy/cluttered video (lots of small
    photos, high contrast) can't compete with the text on top of it. The
-   video's color and motion still show through, just softened. */
+   video's color and motion still show through, just softened.
+   IMPORTANT: this must sit ABOVE the video in stacking order (z-index 1,
+   not 0) — backdrop-filter only blurs whatever is visually behind THIS
+   layer, so if it sat at the same level as the video (painted first),
+   the video would render on top of it and never actually get blurred. */
 .envelope-screen::before {
   content: "";
   position: absolute;
@@ -317,10 +321,10 @@ body.editing .remove-item-btn { display: flex; }
   background: radial-gradient(circle at 50% 45%, hsl(205 40% 96% / 0.8), hsl(205 40% 92% / 0.9));
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
 }
-.envelope-instruction, .envelope { position: relative; z-index: 1; }
+.envelope-instruction, .envelope { position: relative; z-index: 2; }
 .envelope-instruction {
   font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
   text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
