@@ -84,8 +84,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: relative;
 }
 
-.heart { display: inline-block; }
-
 /* ================= BUTTONS ================= */
 .btn {
   font-family: var(--font-body);

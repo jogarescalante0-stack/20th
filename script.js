@@ -67,17 +67,16 @@ function makeDefaultState() {
       "Your smile", "Your kindness", "The way you make me laugh",
       "How you always make things feel better", "Our little conversations",
       "The memories we create", "The way you understand me", "Your patience",
-      "Your presence", "Your support", "The little things you do",
-      "Simply because you're you"
+      "Your presence"
     ],
     polaroids: [
-      { image: null, caption: "This moment ❤️" },
+      { image: null, caption: "This moment" },
       { image: null, caption: "One of my favorite memories." },
       { image: null, caption: "Us." }
     ],
     final: {
       small: "20 months down…",
-      main: "…and hopefully, a lifetime to go. ❤️",
+      main: "…and hopefully, a lifetime to go.",
       signature: "Me"
     }
   };
@@ -137,7 +136,7 @@ function scheduleAutosave() {
 function saveState(showToast = true) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    if (showToast) showToastMessage("Saved ❤️");
+    if (showToast) showToastMessage("Saved");
   } catch (err) {
     console.error("Save failed:", err);
     showToastMessage("Storage is full — try removing a photo or two.");
@@ -226,7 +225,7 @@ function applyEditMode() {
     el.contentEditable = isEditing ? "true" : "false";
   });
   const btn = document.getElementById("editToggleBtn");
-  btn.textContent = isEditing ? "Preview ❤️" : "✎ Back to Edit";
+  btn.textContent = isEditing ? "Preview" : "✎ Back to Edit";
   btn.classList.toggle("active", isEditing);
 }
 
@@ -521,7 +520,7 @@ function renderPolaroids() {
     const rotate = tilts[i % tilts.length];
     const inner = p.image
       ? `<img src="${p.image}" alt="${escapeAttr(p.caption)}" />`
-      : `❤️`;
+      : `📸`;
     return `
       <div class="polaroid" style="transform: rotate(${rotate}deg)" data-index="${i}">
         <button type="button" class="remove-item-btn edit-only" data-action="polaroid-remove" data-index="${i}" aria-label="Remove memory">&times;</button>
