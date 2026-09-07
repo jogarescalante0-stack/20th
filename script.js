@@ -729,12 +729,19 @@ function closeLightbox() {
 const NEXT_MONTHSARY_DATE = new Date("2026-10-09T00:00:00");
 
 function setupLoveQuestion() {
+  const eyebrow = document.querySelector("#questionSection .question-eyebrow");
+  const title = document.querySelector("#questionSection .question-title");
+  const buttonsWrap = document.querySelector("#questionSection .question-buttons");
   const yesBtn = document.getElementById("yesBtn");
   const noBtn = document.getElementById("noBtn");
   const answer = document.getElementById("questionAnswer");
 
   let countdownStarted = false;
   yesBtn.addEventListener("click", () => {
+    // Once said yes, the question itself is done — only the countdown remains.
+    if (eyebrow) eyebrow.hidden = true;
+    if (title) title.hidden = true;
+    if (buttonsWrap) buttonsWrap.hidden = true;
     answer.hidden = false;
     burstHearts(24);
     if (!countdownStarted) {
@@ -743,9 +750,19 @@ function setupLoveQuestion() {
     }
   });
 
+  // "No" isn't really an option — a few playful nudges, then it's gone.
+  const noStages = [
+    "Bossinggg, bawal yan bossing ha",
+    "bawal nga yan bossing",
+    "wag mo to sayangin bossing HAHAHAHAH"
+  ];
+  let noClicks = 0;
   noBtn.addEventListener("click", () => {
-    noBtn.textContent = "Are you sure? 🥺";
-    setTimeout(() => { noBtn.textContent = "No"; }, 1500);
+    noBtn.textContent = noStages[noClicks];
+    noClicks++;
+    if (noClicks >= noStages.length) {
+      setTimeout(() => { noBtn.hidden = true; }, 1400);
+    }
   });
 }
 
