@@ -108,6 +108,14 @@ function loadState() {
       const saved = Array.isArray(parsed.months) ? parsed.months[i] : null;
       return saved ? { ...def, ...saved } : def;
     });
+    // Reasons get the same treatment as months — a save from when the site
+    // had 12 reasons would otherwise keep showing all 12 forever, since the
+    // generic array-merge above just takes the saved array as-is. Always
+    // match the CURRENT number of reasons, keeping edited text by position.
+    merged.reasons = defaults.reasons.map((def, i) => {
+      const saved = Array.isArray(parsed.reasons) ? parsed.reasons[i] : null;
+      return typeof saved === "string" && saved.trim() ? saved : def;
+    });
     return merged;
   } catch (err) {
     console.warn("Could not load saved data, starting fresh.", err);
@@ -750,19 +758,21 @@ function setupLoveQuestion() {
     }
   });
 
-  // "No" isn't really an option — a few playful nudges, then it's gone.
+  // "No" isn't really an option — a few playful nudges, then it just goes
+  // quiet (stays put but does nothing more). It only actually disappears
+  // once "Yes" is clicked, since that hides the whole buttons row above.
   const noStages = [
     "Bossinggg, bawal yan bossing ha",
     "bawal nga yan bossing",
-    "wag mo to sayangin bossing HAHAHAHAH"
+    "sige na beh, mag yes ka na"
   ];
   let noClicks = 0;
   noBtn.addEventListener("click", () => {
-    noBtn.textContent = noStages[noClicks];
-    noClicks++;
-    if (noClicks >= noStages.length) {
-      setTimeout(() => { noBtn.hidden = true; }, 1400);
+    if (noClicks < noStages.length) {
+      noBtn.textContent = noStages[noClicks];
+      noClicks++;
     }
+    // Beyond the last stage, clicking again does nothing — text just stays.
   });
 }
 
