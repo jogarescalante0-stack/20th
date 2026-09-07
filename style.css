@@ -291,6 +291,12 @@ body.editing .remove-item-btn { display: flex; }
   gap: 28px;
   position: relative;
   overflow: hidden; /* clips the video to this screen only */
+  /* Fixed: without this, the ambient floating-hearts layer (z-index 5,
+     fixed to the viewport) could render ON TOP of the envelope whenever
+     a heart happened to drift past it, making it look like a heart was
+     glitching out of the envelope's corner. This keeps the whole screen
+     — envelope included — above that decorative layer. */
+  z-index: 6;
 }
 /* NOTE: envelope-screen is toggled purely via the [hidden] attribute
    (display:none) — never via opacity alone — so it can never remain
