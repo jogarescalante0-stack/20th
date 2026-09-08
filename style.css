@@ -84,8 +84,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   position: relative;
 }
 
-.heart { display: inline-block; }
-
 /* ================= BUTTONS ================= */
 .btn {
   font-family: var(--font-body);
@@ -293,6 +291,12 @@ body.editing .remove-item-btn { display: flex; }
   gap: 28px;
   position: relative;
   overflow: hidden; /* clips the video to this screen only */
+  /* Fixed: without this, the ambient floating-hearts layer (z-index 5,
+     fixed to the viewport) could render ON TOP of the envelope whenever
+     a heart happened to drift past it, making it look like a heart was
+     glitching out of the envelope's corner. This keeps the whole screen
+     — envelope included — above that decorative layer. */
+  z-index: 6;
 }
 /* NOTE: envelope-screen is toggled purely via the [hidden] attribute
    (display:none) — never via opacity alone — so it can never remain
@@ -306,29 +310,7 @@ body.editing .remove-item-btn { display: flex; }
   z-index: 0;
   pointer-events: none; /* video is decorative only — never intercepts clicks */
 }
-/* Scrim so the envelope + text stay readable over any video content.
-   This is a VIGNETTE, not a solid wash: strongest directly behind the
-   text/envelope (center), fading out toward the edges so the photos
-   still show through clearly elsewhere. A previous version made this
-   far too strong (high opacity + heavy blur combined), which washed
-   the whole background out to a pale haze — this is deliberately much
-   lighter so the collage stays visible and pretty. */
-.envelope-screen::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 50% 45%,
-    hsl(205 40% 96% / 0.55) 0%,
-    hsl(205 40% 95% / 0.32) 42%,
-    hsl(205 40% 93% / 0.12) 100%
-  );
-  backdrop-filter: blur(2.5px);
-  -webkit-backdrop-filter: blur(2.5px);
-  z-index: 1;
-  pointer-events: none;
-}
-.envelope-instruction, .envelope { position: relative; z-index: 2; }
+.envelope-instruction, .envelope { position: relative; z-index: 1; }
 .envelope-instruction {
   font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
   text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
