@@ -340,7 +340,17 @@ body.editing .remove-item-btn { display: flex; }
   position: relative;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
+  /* THE FIX: this is what actually clips the letter inside the envelope
+     when closed. A previous edit added a comment claiming
+     "envelope-back's overflow:hidden keeps it clipped" but never actually
+     added that property anywhere — and even if it had been added to
+     .envelope-back specifically, it wouldn't have worked, because
+     .envelope-letter-peek is a SIBLING of .envelope-back (both are
+     children of this .envelope-body element), not a child of it —
+     overflow only clips an element's own descendants. This is the
+     element that actually contains both, so this is where it belongs. */
+  overflow: hidden;
+  border-radius: var(--radius-sm);
 }
 
 /* The main envelope back/body */
@@ -395,9 +405,13 @@ body.editing .remove-item-btn { display: flex; }
     6px 6px 0 -3px rgba(200, 180, 160, 0.2);
   transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition-delay: 0.3s;
-  /* Start translated DOWN so the sheet is fully hidden inside the envelope back.
-     The envelope-back's overflow:hidden keeps it clipped. */
-  transform: translateY(120%);
+  /* Start translated fully DOWN so the sheet is entirely below the visible
+     box when closed — overflow:hidden on .envelope-body (the actual
+     shared parent) clips anything past 100%. 120% wasn't far enough:
+     with top:-8% and height:68%, the sheet's own top edge only reached
+     ~53% at 120%, leaving roughly half of it still inside the visible
+     area. 175% pushes the top edge to ~111%, fully clear. */
+  transform: translateY(175%);
   z-index: 2;
   border: 1px solid rgba(100, 70, 30, 0.08);
 }
