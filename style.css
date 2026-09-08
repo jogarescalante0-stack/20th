@@ -1,16 +1,306 @@
 /* ================================================================
-   ENVELOPE — CLEAN REALISTIC VERSION
+   12th MONTHSARY LOVE LETTER — STYLESHEET (editable version)
    ================================================================ */
 
+:root {
+  /* Retheme note: variable names below are historical (from the original
+     pink palette) but now hold sky-blue values — kept as-is rather than
+     renamed everywhere, so this is a value swap, not a rename refactor. */
+  --cream:        #EAF4FB;
+  --paper:        #FCFEFF;
+  --blush:        #D9EEFB;
+  --rose:         #4A9FD8;
+  --deep-rose:    #1F6690;
+  --gold:         #C9A66B;
+  --ink:          #33424F;
+  --ink-soft:     #5C7186;
+  --shadow-color: 205 40% 45%;
+
+  --font-display: 'Cormorant Garamond', serif;
+  --font-script:  'Caveat', cursive;
+  --font-body:    'Nunito Sans', sans-serif;
+
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 10px;
+  --section-pad: clamp(48px, 8vw, 96px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+img { max-width: 100%; display: block; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+/* ================================================================
+   [hidden] MUST always win.
+   Without this, any later rule like `.screen{display:flex}` or
+   `.lightbox{display:flex}` has the same specificity as the browser's
+   built-in `[hidden]{display:none}` rule, and — because author CSS
+   always outranks the browser's default stylesheet — the visible
+   `display:flex` wins even though the element has `hidden` set.
+   That's what was leaving the envelope screen / lightbox dark
+   overlay sitting on top of the page, fully clickable-blocking,
+   even after JS set `.hidden = true`.
+   ================================================================ */
+[hidden] { display: none !important; }
+
+/* ================================================================
+   Z-INDEX SCALE — one place to reason about stacking order.
+   Background(0) < decoration(5) < page content(auto) <
+   floating controls(200) < replay button(210) < modal/lightbox(500)
+   Nothing above should ever need a value outside this scale.
+   ================================================================ */
+:root {
+  --z-decor: 5;
+  --z-controls: 200;
+  --z-replay: 210;
+  --z-modal: 500;
+  --z-toast: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.paper-card {
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px -10px hsl(var(--shadow-color) / 0.35),
+              0 2px 8px hsl(var(--shadow-color) / 0.15);
+  position: relative;
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  padding: 16px 34px;
+  border-radius: 999px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--rose), var(--deep-rose));
+  color: var(--paper);
+  box-shadow: 0 8px 24px -6px hsl(var(--shadow-color) / 0.55);
+}
+.btn-primary:hover { transform: translateY(-3px); }
+.btn-primary:active { transform: translateY(-1px) scale(0.98); }
+.btn-large { font-size: 1.15rem; padding: 18px 44px; }
+.btn-ghost {
+  color: var(--ink-soft);
+  font-weight: 600;
+  padding: 12px 20px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  opacity: 0.7;
+}
+.btn-ghost:hover { opacity: 1; }
+
+/* ================= CONTROL BAR ================= */
+.control-bar {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: var(--z-controls);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  pointer-events: none; /* children re-enable */
+}
+.control-bar > * { pointer-events: auto; }
+
+.ctrl-btn {
+  background: var(--paper);
+  color: var(--deep-rose);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 9px 14px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px hsl(var(--shadow-color) / 0.3);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.ctrl-btn:hover { transform: translateY(-2px); }
+.ctrl-btn.active { background: var(--deep-rose); color: #fff; }
+.ctrl-save { color: #3E7A4E; }
+.ctrl-danger { color: #B23A3A; margin-left: auto; }
+
+.music-toggle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--rose);
+  font-size: 1.1rem;
+  box-shadow: 0 6px 16px hsl(var(--shadow-color) / 0.3);
+  display: flex; align-items: center; justify-content: center;
+}
+.music-toggle.playing .music-icon { animation: spin 3s linear infinite; }
+.music-toggle.muted { opacity: 0.55; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ================= TOAST ================= */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--deep-rose);
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: var(--z-toast);
+  box-shadow: 0 10px 24px hsl(var(--shadow-color) / 0.4);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ================= EDIT MODE AFFORDANCES ================= */
+.editable {
+  border-radius: 6px;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+body.editing .editable[contenteditable="true"] {
+  outline: 2px dashed var(--rose);
+  outline-offset: 3px;
+  background: hsl(205 60% 97%);
+  cursor: text;
+}
+body.editing .editable[contenteditable="true"]:focus {
+  outline-style: solid;
+  background: #fff;
+}
+.editable:empty::before,
+.editable[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  opacity: 0.45;
+  font-style: italic;
+}
+
+.edit-only { display: none !important; }
+body.editing .edit-only { display: inline-flex !important; }
+
+/* Image upload overlay shown per photo slot while editing */
+.photo-frame { position: relative; }
+.photo-actions {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(30, 15, 20, 0.45);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+body.editing .photo-frame:hover .photo-actions,
+body.editing .photo-frame:focus-within .photo-actions {
+  display: flex;
+  opacity: 1;
+}
+.photo-action-btn {
+  background: #fff;
+  color: var(--deep-rose);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+.photo-action-btn.danger { color: #B23A3A; }
+
+.remove-item-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: #B23A3A;
+  color: #fff;
+  font-size: 0.9rem;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  z-index: 4;
+}
+body.editing .remove-item-btn { display: flex; }
+
+/* ================= PARTICLES ================= */
+.particle-layer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: var(--z-decor); }
+.particle { position: absolute; bottom: -10%; font-size: 1.2rem; opacity: 0.85; animation: floatUp linear forwards; will-change: transform, opacity; }
+@keyframes floatUp {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.9; }
+  100% { transform: translateY(-115vh) translateX(var(--drift, 20px)) rotate(360deg); opacity: 0; }
+}
+
+/* ================= SCREENS ================= */
+.screen {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 76px 24px 24px; /* top padding clears the fixed control bar */
+  text-align: center;
+}
+
+.landing { background: radial-gradient(circle at 50% 20%, var(--blush) 0%, var(--cream) 60%); transition: opacity 0.6s ease, transform 0.6s ease; }
+.landing.fade-out { opacity: 0; transform: scale(0.96); pointer-events: none; }
+.landing-inner { max-width: 560px; z-index: 2; }
+.flower-bg-canvas {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  display: block; z-index: 0; cursor: pointer;
+  /* Android Chrome shows a translucent blue flash on any tapped element
+     by default — that's what was showing up over the flowers on tap.
+     This turns that default highlight off. */
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.eyebrow { font-family: var(--font-script); font-size: 1.4rem; color: var(--deep-rose); margin-bottom: 6px; display: inline-block; }
+.landing-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.6rem, 8vw, 4.4rem); color: var(--deep-rose); line-height: 1.15; margin-bottom: 18px; }
+.landing-subtitle { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--ink-soft); margin-bottom: 36px; font-style: italic; display: block; }
+.landing-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, hsl(205 70% 85% / 0.5), transparent 60%); pointer-events: none; }
+
+/* ================= ENVELOPE ================= */
 .envelope-screen {
   background: linear-gradient(180deg, var(--cream), var(--blush) 120%);
   flex-direction: column;
   gap: 28px;
   position: relative;
-  overflow: hidden;
+  overflow: hidden; /* clips the video to this screen only */
+  /* Fixed: without this, the ambient floating-hearts layer (z-index 5,
+     fixed to the viewport) could render ON TOP of the envelope whenever
+     a heart happened to drift past it, making it look like a heart was
+     glitching out of the envelope's corner. This keeps the whole screen
+     — envelope included — above that decorative layer. */
   z-index: 6;
 }
-
+/* NOTE: envelope-screen is toggled purely via the [hidden] attribute
+   (display:none) — never via opacity alone — so it can never remain
+   as an invisible, click-blocking layer on top of the page. */
 .envelope-bg-video {
   position: absolute;
   inset: 0;
@@ -18,51 +308,22 @@
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  pointer-events: none;
+  pointer-events: none; /* video is decorative only — never intercepts clicks */
 }
-
-.envelope-instruction,
-.envelope {
-  position: relative;
-  z-index: 1;
-}
-
+.envelope-instruction, .envelope { position: relative; z-index: 1; }
 .envelope-instruction {
-  font-family: var(--font-script);
-  font-size: 1.3rem;
-  color: var(--deep-rose);
-  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9);
+  font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
+  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
 }
 
-
-/* ================= ENVELOPE CONTAINER ================= */
-
 .envelope {
-  width: clamp(280px, 86vw, 400px);
+  width: clamp(260px, 85vw, 400px);
   aspect-ratio: 1.6 / 1;
   position: relative;
   cursor: pointer;
   perspective: 1200px;
-  margin: 0 auto;
-
-  /*
-    IMPORTANT:
-    Closed envelope clips everything inside.
-    This prevents the white letter from sticking outside.
-  */
-  overflow: hidden;
-
-  border-radius: 14px;
+  margin: 0 auto; /* belt-and-suspenders centering alongside the flex parent */
 }
-
-
-/* Allow the letter to rise outside ONLY after opening */
-.envelope.opened {
-  overflow: visible;
-}
-
-
-/* ================= SHADOW ================= */
 
 .envelope-shadow {
   position: absolute;
@@ -70,20 +331,10 @@
   left: 5%;
   width: 90%;
   height: 28px;
-
-  background: radial-gradient(
-    ellipse at center,
-    hsl(30deg 25% 30% / 0.4) 0%,
-    transparent 70%
-  );
-
+  background: radial-gradient(ellipse at center, hsl(30deg 25% 30% / 0.4) 0%, transparent 70%);
   border-radius: 50%;
   filter: blur(16px);
-  pointer-events: none;
 }
-
-
-/* ================= ENVELOPE BODY ================= */
 
 .envelope-body {
   position: relative;
@@ -92,42 +343,21 @@
   transform-style: preserve-3d;
 }
 
-
-/* ================= BACK ================= */
-
+/* The main envelope back/body */
 .envelope-back {
   position: absolute;
   inset: 0;
-
-  background: linear-gradient(
-    135deg,
-    #F5E6D3 0%,
-    #E8D4B8 50%,
-    #DCC2A0 100%
-  );
-
-  border-radius: 14px;
-
-  box-shadow:
+  background: linear-gradient(135deg, #F5E6D3 0%, #E8D4B8 50%, #DCC2A0 100%);
+  border-radius: 12px;
+  box-shadow: 
     inset -2px -2px 6px rgba(0, 0, 0, 0.1),
     0 20px 50px -15px rgba(0, 0, 0, 0.25),
     0 10px 25px -10px rgba(0, 0, 0, 0.15);
-
-  border: 1px solid rgba(139, 105, 60, 0.15);
-
-  /*
-    IMPORTANT:
-    The envelope back stays ABOVE the hidden letter
-    while the envelope is closed.
-  */
-  z-index: 2;
-
   overflow: hidden;
+  border: 1px solid rgba(139, 105, 60, 0.15);
 }
 
-
-/* ================= ENVELOPE FOLD LINES ================= */
-
+/* Bottom fold creases (envelope back flap lines) */
 .envelope-back::before,
 .envelope-back::after {
   content: "";
@@ -135,313 +365,218 @@
   bottom: 48%;
   height: 2px;
   width: 55%;
-
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(100, 70, 30, 0.25),
-    transparent
-  );
-
-  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(100, 70, 30, 0.25), transparent);
 }
-
 .envelope-back::before {
   left: 0;
   transform-origin: 0% 50%;
   transform: rotate(-28deg);
 }
-
 .envelope-back::after {
   right: 0;
   transform-origin: 100% 50%;
   transform: rotate(28deg);
 }
 
-
-/* ================================================================
-   LETTER
-   ================================================================ */
-
+/* Letter peeking out — START HIDDEN INSIDE THE ENVELOPE */
 .envelope-letter-peek {
   position: absolute;
-
-  /*
-    Keep the paper completely inside the envelope.
-  */
-  left: 9%;
-  right: 9%;
-  top: 8%;
-
-  height: 72%;
-
+  left: 10%;
+  right: 10%;
+  top: -8%;
+  height: 68%;
   background: var(--paper);
-
-  border-radius: 9px;
-
+  border-radius: 8px 8px 0 0;
+  /* Multiple stacked shadows for depth */
   box-shadow:
-    0 5px 15px rgba(0, 0, 0, 0.12),
-    0 2px 5px rgba(0, 0, 0, 0.08);
-
+    0 -2px 8px rgba(0, 0, 0, 0.08),
+    2px 2px 0 -1px rgba(200, 180, 160, 0.6),
+    4px 4px 0 -2px rgba(200, 180, 160, 0.4),
+    6px 6px 0 -3px rgba(200, 180, 160, 0.2);
+  transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: 0.3s;
+  /* Start translated DOWN so the sheet is fully hidden inside the envelope back.
+     The envelope-back's overflow:hidden keeps it clipped. */
+  transform: translateY(120%);
+  z-index: 2;
   border: 1px solid rgba(100, 70, 30, 0.08);
-
-  /*
-    CLOSED:
-    Letter sits behind the envelope body.
-  */
-  z-index: 1;
-
-  /*
-    No more translateY(120%).
-    That was causing the paper to appear below/in front.
-  */
-  transform: translateY(45%);
-
-  transition:
-    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.5s ease;
-
-  opacity: 1;
-
-  pointer-events: none;
 }
 
-
-/* ================= TOP FLAP ================= */
-
+/* The flap (top triangle) */
 .envelope-flap {
   position: absolute;
-
   top: 0;
   left: 0;
   right: 0;
-
   width: 100%;
-  height: 55%;
-
-  background: linear-gradient(
-    180deg,
-    #E9D9AE 0%,
-    #D9C58C 100%
-  );
-
-  clip-path: polygon(
-    0 0,
-    50% 100%,
-    100% 0
-  );
-
-  transform-origin: 50% 0%;
-
-  transition:
-    transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-
-  /*
-    Flap stays above letter.
-  */
-  z-index: 4;
-
-  filter: drop-shadow(
-    0 6px 8px rgba(0, 0, 0, 0.12)
-  );
-
-  pointer-events: none;
+  height: 52%;
+  background: linear-gradient(180deg, #E9D9AE 0%, #D9C58C 100%);
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+  border-radius: 12px 12px 0 0;
+  transform-origin: top;
+  transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition-delay: 0.15s;
+  z-index: 3;
+  box-shadow: 
+    inset -1px 1px 4px rgba(0, 0, 0, 0.1),
+    0 8px 20px -8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(139, 105, 60, 0.1);
 }
 
-
-/* ================= HEART SEAL ================= */
-
+/* Wax seal */
 .wax-seal {
   position: absolute;
-
   left: 50%;
-  top: 43%;
-
-  width: 58px;
-  height: 54px;
-
+  top: 42%;
+  width: 56px;
+  height: 52px;
   transform: translate(-50%, -50%);
-
-  /*
-    Always above the flap.
-  */
-  z-index: 5;
-
-  transition:
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.35s ease;
-
-  pointer-events: none;
+  z-index: 4;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
 }
 
 .wax-seal span {
   position: absolute;
   inset: 0;
-
-  background: linear-gradient(
-    160deg,
-    #E74C3C,
-    #C0392B
-  );
-
-  clip-path: path(
-    "M28 50C28 50 4 34 4 16C4 7 10 1 18 1C23 1 27 4 28 8.5C29 4 32 1 37 1C44 1 50 7 50 16C50 34 28 50 28 50Z"
-  );
-
-  filter:
-    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
-
+  background: linear-gradient(160deg, #E74C3C, #C0392B);
+  clip-path: path("M28 50C28 50 4 34 4 16C4 7 10 1 18 1C23 1 27 4 28 8.5C29 4 32 1 37 1C44 1 50 7 50 16C50 34 28 50 28 50Z");
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
+  font-size: 0;
+  color: transparent;
   transition: filter 0.25s ease;
 }
 
+/* Sealed state (closed) */
+.envelope:not(.opened) .wax-seal span {
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 rgba(220, 30, 37, 0));
+}
 
-/* ================================================================
-   OPENED STATE
-   ================================================================ */
-
-
-/*
-   Open the flap upward.
-*/
+/* Opened state styles */
 .envelope.opened .envelope-flap {
   transform: rotateX(180deg);
 }
 
-
-/*
-   Hide the heart smoothly.
-*/
 .envelope.opened .wax-seal {
   opacity: 0;
-  transform:
-    translate(-50%, -50%)
-    scale(0.25);
+  transform: translate(-50%, -50%) scale(0.3);
+  transition-delay: 0s;
 }
 
-
-/*
-   Bring the letter ABOVE the envelope body
-   only after opening.
-*/
+/* When opened, move the letter UP into view from its hidden position. */
 .envelope.opened .envelope-letter-peek {
-  z-index: 6;
-
-  /*
-    Letter rises from inside.
-  */
-  transform: translateY(-55%);
+  transform: translateY(-40%);
 }
 
-
-/* ================= HOVER ================= */
-
+/* Hover feedback */
 .envelope:not(.opened):hover .wax-seal span {
-  filter:
-    drop-shadow(0 5px 8px rgba(0, 0, 0, 0.35))
-    drop-shadow(0 0 12px rgba(220, 30, 37, 0.4));
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 12px rgba(220, 30, 37, 0.4));
 }
-
-
-/* ================= TAP ================= */
 
 .envelope:not(.opened):active .wax-seal {
-  transform:
-    translate(-50%, -50%)
-    scale(0.88);
+  transform: translate(-50%, -50%) scale(0.85);
 }
 
-
-/* ================= FLOATING ENVELOPE ================= */
-
+/* Gentle floating animation */
 @keyframes envelope-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
+  0%, 100% { transform: translateY(0) rotateZ(0deg); }
+  50% { transform: translateY(-12px) rotateZ(-0.8deg); }
+}
 
-  50% {
-    transform: translateY(-8px);
-  }
+@keyframes envelope-shadow-breathe {
+  0%, 100% { transform: scaleX(1); opacity: 0.4; }
+  50% { transform: scaleX(0.8); opacity: 0.5; }
+}
+
+@keyframes seal-glow {
+  0%, 100% { filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 rgba(220, 30, 37, 0)); }
+  50% { filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px rgba(220, 30, 37, 0.45)); }
 }
 
 .envelope:not(.opened) {
-  animation:
-    envelope-float 3.2s ease-in-out infinite;
-}
-
-
-/* ================= SHADOW ANIMATION ================= */
-
-@keyframes envelope-shadow-breathe {
-  0%, 100% {
-    transform: scaleX(1);
-    opacity: 0.4;
-  }
-
-  50% {
-    transform: scaleX(0.8);
-    opacity: 0.5;
-  }
+  animation: envelope-float 3.2s ease-in-out infinite;
 }
 
 .envelope:not(.opened) .envelope-shadow {
-  animation:
-    envelope-shadow-breathe 3.2s ease-in-out infinite;
-}
-
-
-/* ================= HEART GLOW ================= */
-
-@keyframes seal-glow {
-  0%, 100% {
-    filter:
-      drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
-  }
-
-  50% {
-    filter:
-      drop-shadow(0 5px 8px rgba(0, 0, 0, 0.35))
-      drop-shadow(0 0 10px rgba(220, 30, 37, 0.45));
-  }
+  animation: envelope-shadow-breathe 3.2s ease-in-out infinite;
 }
 
 .envelope:not(.opened) .wax-seal span {
-  animation:
-    seal-glow 2s ease-in-out infinite;
+  animation: seal-glow 2s ease-in-out infinite;
 }
-
-
-/* ================= MOBILE ================= */
-
-@media (max-width: 480px) {
-
-  .envelope {
-    width: min(86vw, 380px);
-  }
-
-  .envelope-instruction {
-    font-size: 1.15rem;
-  }
-
-  .wax-seal {
-    width: 54px;
-    height: 50px;
-  }
-}
-
-
-/* ================= REDUCED MOTION ================= */
 
 @media (prefers-reduced-motion: reduce) {
-
-  .envelope,
-  .envelope-shadow,
-  .wax-seal span {
+  .envelope, .envelope-shadow, .wax-seal span {
     animation: none !important;
   }
-
-  .envelope-flap,
-  .envelope-letter-peek,
-  .wax-seal {
-    transition-duration: 0.01ms !important;
-  }
 }
+
+/* ================= MAIN ================= */
+main { position: relative; }
+.section { padding: var(--section-pad) 20px; max-width: 980px; margin: 0 auto; }
+.section-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.9rem, 5vw, 2.6rem); color: var(--deep-rose); text-align: center; margin-bottom: 6px; }
+.section-subtitle { text-align: center; color: var(--ink-soft); font-style: italic; margin-bottom: 40px; }
+
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.reveal.in-view { opacity: 1; transform: translateY(0); }
+
+.replay-btn {
+  position: fixed; bottom: 18px; right: 18px;
+  background: var(--paper); color: var(--deep-rose);
+  padding: 10px 16px; border-radius: 999px;
+  font-size: 0.85rem; font-weight: 600;
+  box-shadow: 0 6px 16px hsl(var(--shadow-color) / 0.3);
+  z-index: var(--z-replay);
+}
+.replay-btn:hover { transform: translateY(-2px); }
+
+/* ================= LETTER ================= */
+.letter-section { padding-top: clamp(90px, 10vw, 120px); }
+.letter-card {
+  padding: clamp(28px, 6vw, 60px);
+  background: repeating-linear-gradient(var(--paper) 0px, var(--paper) 38px, #DCEEF9 39px);
+  border: 1px solid #CFE3F0;
+}
+.letter-to { font-family: var(--font-script); font-size: clamp(1.6rem, 4vw, 2.2rem); color: var(--deep-rose); margin-bottom: 18px; }
+.letter-body {
+  font-family: var(--font-script);
+  font-size: clamp(1.25rem, 3vw, 1.55rem);
+  color: var(--ink);
+  line-height: 1.7;
+  min-height: 3.4em;
+  white-space: pre-wrap;
+}
+.letter-footer {
+  margin-top: 34px; display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px; border-top: 1px dashed var(--blush); padding-top: 18px;
+}
+.letter-date { font-family: var(--font-body); font-size: 0.9rem; color: var(--ink-soft); }
+.letter-signature { font-family: var(--font-script); font-size: 1.5rem; color: var(--deep-rose); }
+
+/* ================= TIMELINE ================= */
+.timeline-carousel { position: relative; display: flex; align-items: center; gap: 6px; }
+.timeline {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  padding: 4px 7% 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.timeline::-webkit-scrollbar { display: none; }
+.month-card {
+  flex: 0 0 86%;
+  max-width: 340px;
+  scroll-snap-align: center;
+  background: var(--paper); border-radius: var(--radius-md); padding: 22px 20px;
+  box-shadow: 0 8px 20px -8px hsl(var(--shadow-color) / 0.3);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border-left: 4px solid var(--rose);
+  position: relative;
+}
+.month-card:hover { transform: translateY(-4px); }
+
+/* rest of stylesheet unchanged... */
