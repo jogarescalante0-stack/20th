@@ -284,23 +284,15 @@ body.editing .remove-item-btn { display: flex; }
 .landing-subtitle { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--ink-soft); margin-bottom: 36px; font-style: italic; display: block; }
 .landing-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, hsl(205 70% 85% / 0.5), transparent 60%); pointer-events: none; }
 
-/* ================= ENVELOPE (REDESIGNED) ================= */
+/* ================= ENVELOPE (BALANCED & SYMMETRIC) ================= */
 .envelope-screen {
   background: linear-gradient(180deg, var(--cream), var(--blush) 120%);
   flex-direction: column;
   gap: 28px;
   position: relative;
   overflow: hidden; /* clips the video to this screen only */
-  /* Fixed: without this, the ambient floating-hearts layer (z-index 5,
-     fixed to the viewport) could render ON TOP of the envelope whenever
-     a heart happened to drift past it, making it look like a heart was
-     glitching out of the envelope's corner. This keeps the whole screen
-     — envelope included — above that decorative layer. */
   z-index: 6;
 }
-/* NOTE: envelope-screen is toggled purely via the [hidden] attribute
-   (display:none) — never via opacity alone — so it can never remain
-   as an invisible, click-blocking layer on top of the page. */
 .envelope-bg-video {
   position: absolute;
   inset: 0;
@@ -308,12 +300,12 @@ body.editing .remove-item-btn { display: flex; }
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  pointer-events: none; /* video is decorative only — never intercepts clicks */
+  pointer-events: none;
 }
 .envelope-instruction, .envelope { position: relative; z-index: 1; }
 .envelope-instruction {
   font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
-  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
+  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9);
 }
 
 .envelope {
@@ -328,8 +320,9 @@ body.editing .remove-item-btn { display: flex; }
 .envelope-shadow {
   position: absolute;
   bottom: -20px;
-  left: 10%;
-  width: 80%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
   height: 20px;
   background: radial-gradient(ellipse at center, hsl(205deg 40% 40% / 0.25) 0%, transparent 70%);
   border-radius: 50%;
@@ -343,7 +336,7 @@ body.editing .remove-item-btn { display: flex; }
   transform-style: preserve-3d;
 }
 
-/* Clean, minimal envelope back — white with subtle gradient */
+/* Envelope back — clean and balanced */
 .envelope-back {
   position: absolute;
   inset: 0;
@@ -356,34 +349,34 @@ body.editing .remove-item-btn { display: flex; }
   border: 1px solid rgba(79, 144, 181, 0.15);
 }
 
-/* Subtle fold lines on the back */
+/* Symmetric fold lines on the back */
 .envelope-back::before,
 .envelope-back::after {
   content: "";
   position: absolute;
-  bottom: 48%;
-  height: 1px;
-  width: 50%;
-  background: linear-gradient(90deg, transparent, rgba(79, 144, 181, 0.12), transparent);
+  top: 50%;
+  height: 40%;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(79, 144, 181, 0.12) 0%, transparent 100%);
 }
 .envelope-back::before {
-  left: 2%;
-  transform-origin: 0% 50%;
+  left: 25%;
+  transform-origin: 50% 0%;
   transform: rotate(-22deg);
 }
 .envelope-back::after {
-  right: 2%;
-  transform-origin: 100% 50%;
+  right: 25%;
+  transform-origin: 50% 0%;
   transform: rotate(22deg);
 }
 
-/* Letter peeking out — clean white with subtle shadow */
+/* Letter peeking out — centered */
 .envelope-letter-peek {
   position: absolute;
-  left: 8%;
-  right: 8%;
-  top: -6%;
-  height: 70%;
+  left: 12%;
+  right: 12%;
+  top: -8%;
+  height: 65%;
   background: #FFFFFF;
   border-radius: 4px 4px 0 0;
   box-shadow:
@@ -392,12 +385,12 @@ body.editing .remove-item-btn { display: flex; }
     2px 2px 0 rgba(79, 144, 181, 0.05);
   transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition-delay: 0.3s;
-  transform: translateY(120%);
+  transform: translateY(125%);
   z-index: 2;
   border: 1px solid rgba(79, 144, 181, 0.1);
 }
 
-/* Clean flap — subtle blue-gray gradient */
+/* Flap — balanced triangle */
 .envelope-flap {
   position: absolute;
   top: 0;
@@ -418,13 +411,13 @@ body.editing .remove-item-btn { display: flex; }
   border: 1px solid rgba(79, 144, 181, 0.1);
 }
 
-/* Modern heart seal — simple and elegant */
+/* Heart seal — perfectly centered */
 .wax-seal {
   position: absolute;
   left: 50%;
-  top: 40%;
-  width: 50px;
-  height: 50px;
+  top: 50%;
+  width: 60px;
+  height: 60px;
   transform: translate(-50%, -50%);
   z-index: 4;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
@@ -434,15 +427,16 @@ body.editing .remove-item-btn { display: flex; }
 }
 
 .wax-seal span {
-  font-size: 2.2rem;
-  color: var(--rose);
-  filter: drop-shadow(0 3px 6px rgba(74, 159, 216, 0.25));
+  font-size: 2.8rem;
+  color: #E63946;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  filter: drop-shadow(0 3px 6px rgba(230, 57, 70, 0.3));
   transition: filter 0.25s ease, transform 0.25s ease;
 }
 
 /* Sealed state (closed) */
 .envelope:not(.opened) .wax-seal span {
-  filter: drop-shadow(0 3px 6px rgba(74, 159, 216, 0.25));
+  filter: drop-shadow(0 3px 6px rgba(230, 57, 70, 0.3));
 }
 
 /* Opened state styles */
@@ -456,19 +450,19 @@ body.editing .remove-item-btn { display: flex; }
   transition-delay: 0s;
 }
 
-/* When opened, move the letter UP into view from its hidden position. */
+/* When opened, move the letter UP into view */
 .envelope.opened .envelope-letter-peek {
-  transform: translateY(-45%);
+  transform: translateY(-40%);
 }
 
 /* Hover feedback */
 .envelope:not(.opened):hover .wax-seal span {
-  filter: drop-shadow(0 4px 10px rgba(74, 159, 216, 0.4));
-  transform: scale(1.1);
+  filter: drop-shadow(0 4px 10px rgba(230, 57, 70, 0.45));
+  transform: scale(1.12);
 }
 
 .envelope:not(.opened):active .wax-seal {
-  transform: translate(-50%, -50%) scale(0.9);
+  transform: translate(-50%, -50%) scale(0.88);
 }
 
 /* Gentle floating animation */
@@ -483,8 +477,8 @@ body.editing .remove-item-btn { display: flex; }
 }
 
 @keyframes seal-glow {
-  0%, 100% { filter: drop-shadow(0 3px 6px rgba(74, 159, 216, 0.25)); }
-  50% { filter: drop-shadow(0 4px 10px rgba(74, 159, 216, 0.45)); }
+  0%, 100% { filter: drop-shadow(0 3px 6px rgba(230, 57, 70, 0.3)); }
+  50% { filter: drop-shadow(0 4px 10px rgba(230, 57, 70, 0.5)); }
 }
 
 .envelope:not(.opened) {
