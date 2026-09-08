@@ -284,15 +284,23 @@ body.editing .remove-item-btn { display: flex; }
 .landing-subtitle { font-size: clamp(1rem, 2.4vw, 1.2rem); color: var(--ink-soft); margin-bottom: 36px; font-style: italic; display: block; }
 .landing-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 100%, hsl(205 70% 85% / 0.5), transparent 60%); pointer-events: none; }
 
-/* ================= ENVELOPE (BALANCED & SYMMETRIC) ================= */
+/* ================= ENVELOPE ================= */
 .envelope-screen {
   background: linear-gradient(180deg, var(--cream), var(--blush) 120%);
   flex-direction: column;
   gap: 28px;
   position: relative;
   overflow: hidden; /* clips the video to this screen only */
+  /* Fixed: without this, the ambient floating-hearts layer (z-index 5,
+     fixed to the viewport) could render ON TOP of the envelope whenever
+     a heart happened to drift past it, making it look like a heart was
+     glitching out of the envelope's corner. This keeps the whole screen
+     — envelope included — above that decorative layer. */
   z-index: 6;
 }
+/* NOTE: envelope-screen is toggled purely via the [hidden] attribute
+   (display:none) — never via opacity alone — so it can never remain
+   as an invisible, click-blocking layer on top of the page. */
 .envelope-bg-video {
   position: absolute;
   inset: 0;
@@ -300,33 +308,32 @@ body.editing .remove-item-btn { display: flex; }
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  pointer-events: none;
+  pointer-events: none; /* video is decorative only — never intercepts clicks */
 }
 .envelope-instruction, .envelope { position: relative; z-index: 1; }
 .envelope-instruction {
   font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
-  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9);
+  text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
 }
 
 .envelope {
-  width: clamp(280px, 80vw, 420px);
-  aspect-ratio: 1.5 / 1;
+  width: clamp(260px, 85vw, 400px);
+  aspect-ratio: 1.6 / 1;
   position: relative;
   cursor: pointer;
   perspective: 1200px;
-  margin: 0 auto;
+  margin: 0 auto; /* belt-and-suspenders centering alongside the flex parent */
 }
 
 .envelope-shadow {
   position: absolute;
-  bottom: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 75%;
-  height: 20px;
-  background: radial-gradient(ellipse at center, hsl(205deg 40% 40% / 0.25) 0%, transparent 70%);
+  bottom: -22px;
+  left: 5%;
+  width: 90%;
+  height: 28px;
+  background: radial-gradient(ellipse at center, hsl(30deg 25% 30% / 0.4) 0%, transparent 70%);
   border-radius: 50%;
-  filter: blur(14px);
+  filter: blur(16px);
 }
 
 .envelope-body {
@@ -336,61 +343,66 @@ body.editing .remove-item-btn { display: flex; }
   transform-style: preserve-3d;
 }
 
-/* Envelope back — clean and balanced */
+/* The main envelope back/body */
 .envelope-back {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #FFFFFF 0%, #F9F9F9 100%);
-  border-radius: 8px;
+  background: linear-gradient(135deg, #F5E6D3 0%, #E8D4B8 50%, #DCC2A0 100%);
+  border-radius: 12px;
   box-shadow: 
-    0 12px 32px -8px rgba(31, 102, 144, 0.2),
-    inset 0 1px 2px rgba(255, 255, 255, 0.8);
+    inset -2px -2px 6px rgba(0, 0, 0, 0.1),
+    0 20px 50px -15px rgba(0, 0, 0, 0.25),
+    0 10px 25px -10px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  border: 1px solid rgba(79, 144, 181, 0.15);
+  border: 1px solid rgba(139, 105, 60, 0.15);
 }
 
-/* Symmetric fold lines on the back */
+/* Bottom fold creases (envelope back flap lines) */
 .envelope-back::before,
 .envelope-back::after {
   content: "";
   position: absolute;
-  top: 50%;
-  height: 40%;
-  width: 1px;
-  background: linear-gradient(180deg, rgba(79, 144, 181, 0.12) 0%, transparent 100%);
+  bottom: 48%;
+  height: 2px;
+  width: 55%;
+  background: linear-gradient(90deg, transparent, rgba(100, 70, 30, 0.25), transparent);
 }
 .envelope-back::before {
-  left: 25%;
-  transform-origin: 50% 0%;
-  transform: rotate(-22deg);
+  left: 0;
+  transform-origin: 0% 50%;
+  transform: rotate(-28deg);
 }
 .envelope-back::after {
-  right: 25%;
-  transform-origin: 50% 0%;
-  transform: rotate(22deg);
+  right: 0;
+  transform-origin: 100% 50%;
+  transform: rotate(28deg);
 }
 
-/* Letter peeking out — centered */
+/* Letter peeking out — START HIDDEN INSIDE THE ENVELOPE */
 .envelope-letter-peek {
   position: absolute;
-  left: 12%;
-  right: 12%;
+  left: 10%;
+  right: 10%;
   top: -8%;
-  height: 65%;
-  background: #FFFFFF;
-  border-radius: 4px 4px 0 0;
+  height: 68%;
+  background: var(--paper);
+  border-radius: 8px 8px 0 0;
+  /* Multiple stacked shadows for depth */
   box-shadow:
-    0 -1px 4px rgba(31, 102, 144, 0.1),
-    1px 1px 0 rgba(79, 144, 181, 0.08),
-    2px 2px 0 rgba(79, 144, 181, 0.05);
+    0 -2px 8px rgba(0, 0, 0, 0.08),
+    2px 2px 0 -1px rgba(200, 180, 160, 0.6),
+    4px 4px 0 -2px rgba(200, 180, 160, 0.4),
+    6px 6px 0 -3px rgba(200, 180, 160, 0.2);
   transition: transform 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition-delay: 0.3s;
-  transform: translateY(125%);
+  /* Start translated DOWN so the sheet is fully hidden inside the envelope back.
+     The envelope-back's overflow:hidden keeps it clipped. */
+  transform: translateY(120%);
   z-index: 2;
-  border: 1px solid rgba(79, 144, 181, 0.1);
+  border: 1px solid rgba(100, 70, 30, 0.08);
 }
 
-/* Flap — balanced triangle */
+/* The flap (top triangle) */
 .envelope-flap {
   position: absolute;
   top: 0;
@@ -398,45 +410,45 @@ body.editing .remove-item-btn { display: flex; }
   right: 0;
   width: 100%;
   height: 52%;
-  background: linear-gradient(180deg, #F0F6FA 0%, #E8F0F7 100%);
+  background: linear-gradient(180deg, #E9D9AE 0%, #D9C58C 100%);
   clip-path: polygon(0 0, 50% 100%, 100% 0);
-  border-radius: 8px 8px 0 0;
+  border-radius: 12px 12px 0 0;
   transform-origin: top;
   transition: transform 0.75s cubic-bezier(0.34, 1.56, 0.64, 1);
   transition-delay: 0.15s;
   z-index: 3;
   box-shadow: 
-    inset 0 1px 2px rgba(255, 255, 255, 0.6),
-    0 6px 16px -8px rgba(31, 102, 144, 0.15);
-  border: 1px solid rgba(79, 144, 181, 0.1);
+    inset -1px 1px 4px rgba(0, 0, 0, 0.1),
+    0 8px 20px -8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(139, 105, 60, 0.1);
 }
 
-/* Heart seal — perfectly centered */
+/* Wax seal */
 .wax-seal {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 60px;
-  height: 60px;
+  top: 42%;
+  width: 56px;
+  height: 52px;
   transform: translate(-50%, -50%);
   z-index: 4;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .wax-seal span {
-  font-size: 2.8rem;
-  color: #E63946;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  filter: drop-shadow(0 3px 6px rgba(230, 57, 70, 0.3));
-  transition: filter 0.25s ease, transform 0.25s ease;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, #E74C3C, #C0392B);
+  clip-path: path("M28 50C28 50 4 34 4 16C4 7 10 1 18 1C23 1 27 4 28 8.5C29 4 32 1 37 1C44 1 50 7 50 16C50 34 28 50 28 50Z");
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3));
+  font-size: 0;
+  color: transparent;
+  transition: filter 0.25s ease;
 }
 
 /* Sealed state (closed) */
 .envelope:not(.opened) .wax-seal span {
-  filter: drop-shadow(0 3px 6px rgba(230, 57, 70, 0.3));
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 rgba(220, 30, 37, 0));
 }
 
 /* Opened state styles */
@@ -446,39 +458,38 @@ body.editing .remove-item-btn { display: flex; }
 
 .envelope.opened .wax-seal {
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.4);
+  transform: translate(-50%, -50%) scale(0.3);
   transition-delay: 0s;
 }
 
-/* When opened, move the letter UP into view */
+/* When opened, move the letter UP into view from its hidden position. */
 .envelope.opened .envelope-letter-peek {
   transform: translateY(-40%);
 }
 
 /* Hover feedback */
 .envelope:not(.opened):hover .wax-seal span {
-  filter: drop-shadow(0 4px 10px rgba(230, 57, 70, 0.45));
-  transform: scale(1.12);
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 12px rgba(220, 30, 37, 0.4));
 }
 
 .envelope:not(.opened):active .wax-seal {
-  transform: translate(-50%, -50%) scale(0.88);
+  transform: translate(-50%, -50%) scale(0.85);
 }
 
 /* Gentle floating animation */
 @keyframes envelope-float {
   0%, 100% { transform: translateY(0) rotateZ(0deg); }
-  50% { transform: translateY(-10px) rotateZ(-0.6deg); }
+  50% { transform: translateY(-12px) rotateZ(-0.8deg); }
 }
 
 @keyframes envelope-shadow-breathe {
-  0%, 100% { transform: scaleX(1); opacity: 0.25; }
-  50% { transform: scaleX(0.85); opacity: 0.35; }
+  0%, 100% { transform: scaleX(1); opacity: 0.4; }
+  50% { transform: scaleX(0.8); opacity: 0.5; }
 }
 
 @keyframes seal-glow {
-  0%, 100% { filter: drop-shadow(0 3px 6px rgba(230, 57, 70, 0.3)); }
-  50% { filter: drop-shadow(0 4px 10px rgba(230, 57, 70, 0.5)); }
+  0%, 100% { filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 0 rgba(220, 30, 37, 0)); }
+  50% { filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 10px rgba(220, 30, 37, 0.45)); }
 }
 
 .envelope:not(.opened) {
@@ -567,3 +578,5 @@ main { position: relative; }
   position: relative;
 }
 .month-card:hover { transform: translateY(-4px); }
+
+/* rest of stylesheet unchanged... */
