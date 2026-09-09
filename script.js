@@ -285,22 +285,54 @@ function setupLanding() {
 function setupEnvelope() {
   const envelope = document.getElementById("envelope");
   const envelopeScreen = document.getElementById("envelopeScreen");
-  const flap = envelope.querySelector(".envelope-flap");
+  const letterPeek = envelope.querySelector(".envelope-letter-peek");
   const main = document.getElementById("mainContent");
 
   let finished = false;
-  const finishOpening = () => {
-    if (finished) return; // transitionend + fallback timeout can both fire — only run this once
-    finished = true;
-    envelopeScreen.hidden = true;   // fully removed from layout, no leftover overlay
+  let crossfadeStarted = false;
+
+  // Step 2 of the handoff: once the paper has risen out of the envelope,
+  // crossfade the two screens instead of hard-swapping `hidden`. Main
+  // content fades in *underneath* the envelope scene while the envelope
+  // scene dissolves on top of it, so it reads as one continuous motion.
+  const startCrossfade = () => {
+    if (crossfadeStarted) return;
+    crossfadeStarted = true;
+
     main.hidden = false;
+    main.classList.add("entering"); // start transparent
     window.scrollTo(0, 0);
     revealVisibleSections();
+
+    // Force a layout flush so the browser registers the "entering" (opacity:0)
+    // state before we remove it — otherwise both class changes coalesce into
+    // one paint and there's nothing to transition from.
+    void main.offsetWidth;
+
+    requestAnimationFrame(() => {
+      main.classList.remove("entering");   // main content fades in
+      envelopeScreen.classList.add("leaving"); // envelope scene dissolves on top
+    });
+
+    // Step 3: once the crossfade itself has finished, actually remove the
+    // envelope screen from layout so it can't linger as an invisible,
+    // click-blocking layer.
+    const finishOpening = () => {
+      if (finished) return; // transitionend + fallback timeout can both fire — only run this once
+      finished = true;
+      envelopeScreen.hidden = true; // fully removed from layout, no leftover overlay
+    };
+    envelopeScreen.addEventListener("transitionend", (e) => {
+      if (e.target !== envelopeScreen || e.propertyName !== "opacity") return;
+      finishOpening();
+    }, { once: true });
+    setTimeout(finishOpening, 700); // fallback matching the 0.55s CSS fade + buffer
   };
 
   const openEnvelope = () => {
     if (envelope.classList.contains("opened")) return;
     finished = false;
+    crossfadeStarted = false;
     // Fire this first and synchronously, inside the click handler itself —
     // this is the one moment we have real "user gesture" credit, which is
     // what lets the browser allow audio to start playing.
@@ -308,18 +340,21 @@ function setupEnvelope() {
     envelope.classList.add("opened");
     burstHearts(6);
 
-    // Primary: wait for the flap's own transform transition to actually finish.
-    const onFlapTransitionEnd = (e) => {
-      if (e.target !== flap || e.propertyName !== "transform") return;
-      flap.removeEventListener("transitionend", onFlapTransitionEnd);
-      finishOpening();
+    // Primary: wait for the letter-peek's own rise-out transition to finish —
+    // that's the moment the paper has fully emerged, which is when the
+    // crossfade to the full letter should begin.
+    const onLetterTransitionEnd = (e) => {
+      if (e.target !== letterPeek || e.propertyName !== "transform") return;
+      letterPeek.removeEventListener("transitionend", onLetterTransitionEnd);
+      startCrossfade();
     };
-    flap.addEventListener("transitionend", onFlapTransitionEnd);
+    letterPeek.addEventListener("transitionend", onLetterTransitionEnd);
 
     // Fallback: if transitionend never fires (reduced-motion users, a
     // backgrounded tab throttling timers, etc.) don't leave the user stuck
-    // looking at the envelope — finish anyway shortly after the CSS duration.
-    setTimeout(finishOpening, 1100);
+    // looking at the envelope — start the crossfade anyway shortly after
+    // the CSS duration (1.1s transition + 0.26s delay ≈ 1.36s).
+    setTimeout(startCrossfade, 1450);
   };
 
   envelope.addEventListener("click", openEnvelope);
@@ -337,8 +372,46 @@ function setupReplay() {
   replayBtn.addEventListener("click", () => {
     envelope.classList.remove("opened");
     main.hidden = true;
+    main.classList.remove("entering");
+    envelopeScreen.classList.remove("leaving");
     envelopeScreen.hidden = false;
   });
+}
+
+/* ================================================================
+   PHOTO FRAME TEMPLATES — shared by the full renderers below AND by
+   the single-frame updates in the upload flow, so both stay in sync
+   and a one-photo upload never has to touch unrelated frames.
+   ================================================================ */
+function monthPhotoFrameHTML(m, i) {
+  const photoInner = m.image
+    ? `<img src="${m.image}" alt="${escapeAttr(m.title)}" />`
+    : `📷`;
+  return `
+    ${photoInner}
+    <div class="photo-actions edit-only">
+      <button type="button" class="photo-action-btn" data-action="month-photo" data-index="${i}">Upload</button>
+      ${m.image ? `<button type="button" class="photo-action-btn danger" data-action="month-remove-photo" data-index="${i}">Remove</button>` : ""}
+    </div>
+  `;
+}
+function galleryPhotoFrameHTML(g, i) {
+  const inner = g.image ? `<img src="${g.image}" alt="${escapeAttr(g.caption)}" />` : `📸`;
+  return `
+    ${inner}
+    <div class="photo-actions edit-only">
+      <button type="button" class="photo-action-btn" data-action="gallery-photo" data-index="${i}">${g.image ? "Replace" : "Upload"}</button>
+    </div>
+  `;
+}
+function polaroidPhotoFrameHTML(p, i) {
+  const inner = p.image ? `<img src="${p.image}" alt="${escapeAttr(p.caption)}" />` : `📸`;
+  return `
+    ${inner}
+    <div class="photo-actions edit-only">
+      <button type="button" class="photo-action-btn" data-action="polaroid-photo" data-index="${i}">${p.image ? "Replace" : "Upload"}</button>
+    </div>
+  `;
 }
 
 /* ================================================================
@@ -347,9 +420,6 @@ function setupReplay() {
 function renderTimeline() {
   const container = document.getElementById("timeline");
   container.innerHTML = state.months.map((m, i) => {
-    const photoInner = m.image
-      ? `<img src="${m.image}" alt="${escapeAttr(m.title)}" />`
-      : `📷`;
     return `
       <article class="month-card" data-index="${i}">
         <div class="month-toggle-zone" data-action="month-toggle" data-index="${i}">
@@ -358,11 +428,7 @@ function renderTimeline() {
         </div>
         <p class="month-desc editable" contenteditable="false" data-bind="months.${i}.message" data-placeholder="Enter memory / message">${escapeHTML(m.message)}</p>
         <div class="month-photo photo-frame" data-action="month-photo" data-index="${i}" tabindex="0">
-          ${photoInner}
-          <div class="photo-actions edit-only">
-            <button type="button" class="photo-action-btn" data-action="month-photo" data-index="${i}">Upload</button>
-            ${m.image ? `<button type="button" class="photo-action-btn danger" data-action="month-remove-photo" data-index="${i}">Remove</button>` : ""}
-          </div>
+          ${monthPhotoFrameHTML(m, i)}
         </div>
         <p class="month-caption editable" contenteditable="false" data-bind="months.${i}.caption" data-placeholder="Enter caption">${escapeHTML(m.caption)}</p>
       </article>
@@ -488,17 +554,11 @@ function playPageTurnSound() {
 function renderGallery() {
   const grid = document.getElementById("galleryGrid");
   grid.innerHTML = state.gallery.map((g, i) => {
-    const inner = g.image
-      ? `<img src="${g.image}" alt="${escapeAttr(g.caption)}" />`
-      : `📸`;
     return `
       <figure class="gallery-item" data-index="${i}">
         <button type="button" class="remove-item-btn edit-only" data-action="gallery-remove" data-index="${i}" aria-label="Remove photo">&times;</button>
         <div class="photo-frame" data-action="gallery-photo" data-index="${i}" tabindex="0">
-          ${inner}
-          <div class="photo-actions edit-only">
-            <button type="button" class="photo-action-btn" data-action="gallery-photo" data-index="${i}">${g.image ? "Replace" : "Upload"}</button>
-          </div>
+          ${galleryPhotoFrameHTML(g, i)}
         </div>
         <figcaption class="gallery-caption editable" contenteditable="false" data-bind="gallery.${i}.caption" data-placeholder="Enter caption">${escapeHTML(g.caption)}</figcaption>
       </figure>
@@ -507,6 +567,27 @@ function renderGallery() {
 
   grid.querySelectorAll("[data-bind]").forEach(el => updateEmptyState(el, el.innerText));
   applyEditModeToNewNodes(grid);
+}
+
+/* Appends exactly one new gallery item without touching any existing
+   ones — used when adding a new photo so the other photos never
+   re-render. Returns the new <figure> element. */
+function appendGalleryItem(g, i) {
+  const grid = document.getElementById("galleryGrid");
+  const fig = document.createElement("figure");
+  fig.className = "gallery-item";
+  fig.dataset.index = String(i);
+  fig.innerHTML = `
+    <button type="button" class="remove-item-btn edit-only" data-action="gallery-remove" data-index="${i}" aria-label="Remove photo">&times;</button>
+    <div class="photo-frame" data-action="gallery-photo" data-index="${i}" tabindex="0">
+      ${galleryPhotoFrameHTML(g, i)}
+    </div>
+    <figcaption class="gallery-caption editable" contenteditable="false" data-bind="gallery.${i}.caption" data-placeholder="Enter caption">${escapeHTML(g.caption)}</figcaption>
+  `;
+  grid.appendChild(fig);
+  fig.querySelectorAll("[data-bind]").forEach(el => updateEmptyState(el, el.innerText));
+  applyEditModeToNewNodes(fig);
+  return fig;
 }
 
 function renderReasons() {
@@ -523,20 +604,13 @@ function renderReasons() {
 
 function renderPolaroids() {
   const wall = document.getElementById("polaroidWall");
-  const tilts = [-6, 4, -3, 7, -8, 5];
   wall.innerHTML = state.polaroids.map((p, i) => {
-    const rotate = tilts[i % tilts.length];
-    const inner = p.image
-      ? `<img src="${p.image}" alt="${escapeAttr(p.caption)}" />`
-      : `📸`;
+    const rotate = POLAROID_TILTS[i % POLAROID_TILTS.length];
     return `
       <div class="polaroid" style="transform: rotate(${rotate}deg)" data-index="${i}">
         <button type="button" class="remove-item-btn edit-only" data-action="polaroid-remove" data-index="${i}" aria-label="Remove memory">&times;</button>
         <div class="photo-frame" data-action="polaroid-photo" data-index="${i}" tabindex="0">
-          ${inner}
-          <div class="photo-actions edit-only">
-            <button type="button" class="photo-action-btn" data-action="polaroid-photo" data-index="${i}">${p.image ? "Replace" : "Upload"}</button>
-          </div>
+          ${polaroidPhotoFrameHTML(p, i)}
         </div>
         <p class="polaroid-caption editable" contenteditable="false" data-bind="polaroids.${i}.caption" data-placeholder="Enter caption">${escapeHTML(p.caption)}</p>
       </div>
@@ -544,6 +618,28 @@ function renderPolaroids() {
   }).join("");
   wall.querySelectorAll("[data-bind]").forEach(el => updateEmptyState(el, el.innerText));
   applyEditModeToNewNodes(wall);
+}
+const POLAROID_TILTS = [-6, 4, -3, 7, -8, 5];
+
+/* Appends exactly one new polaroid without touching any existing ones. */
+function appendPolaroidItem(p, i) {
+  const wall = document.getElementById("polaroidWall");
+  const rotate = POLAROID_TILTS[i % POLAROID_TILTS.length];
+  const div = document.createElement("div");
+  div.className = "polaroid";
+  div.style.transform = `rotate(${rotate}deg)`;
+  div.dataset.index = String(i);
+  div.innerHTML = `
+    <button type="button" class="remove-item-btn edit-only" data-action="polaroid-remove" data-index="${i}" aria-label="Remove memory">&times;</button>
+    <div class="photo-frame" data-action="polaroid-photo" data-index="${i}" tabindex="0">
+      ${polaroidPhotoFrameHTML(p, i)}
+    </div>
+    <p class="polaroid-caption editable" contenteditable="false" data-bind="polaroids.${i}.caption" data-placeholder="Enter caption">${escapeHTML(p.caption)}</p>
+  `;
+  wall.appendChild(div);
+  div.querySelectorAll("[data-bind]").forEach(el => updateEmptyState(el, el.innerText));
+  applyEditModeToNewNodes(div);
+  return div;
 }
 
 /* Newly injected nodes need their contentEditable state set to match
@@ -560,8 +656,6 @@ function applyEditModeToNewNodes(root) {
    Avoids duplicate-listener bugs entirely since re-rendering a
    section never re-attaches per-element handlers.
    ================================================================ */
-let pendingUpload = null; // { type: 'month'|'gallery-add'|'gallery-replace'|'polaroid-add'|'polaroid-replace', index }
-
 function setupGlobalDelegation() {
   document.addEventListener("click", e => {
     const actionEl = e.target.closest("[data-action]");
@@ -638,7 +732,20 @@ function setupGlobalDelegation() {
 
 /* ================================================================
    IMAGE UPLOAD (single reused hidden <input type="file">)
+
+   Flow for every upload:
+     1. beginFramePreview()  — instantly shows the picked photo via
+        URL.createObjectURL (no encoding, no main-thread work) in ONLY
+        the one frame that was clicked. Nothing else on the page re-renders.
+     2. compressImage()      — off the main thread where possible
+        (createImageBitmap + async canvas.toBlob), producing a resized,
+        persistable base64 image in the background while the preview is
+        already visible.
+     3. finalizeFramePreview() — swaps the temporary preview for the
+        final image on that same single frame, and only then autosaves.
    ================================================================ */
+let pendingUpload = null; // { type: 'month'|'gallery-add'|'gallery-replace'|'polaroid-add'|'polaroid-replace', index }
+
 function setupHiddenImageInput() {
   const input = document.getElementById("hiddenImageInput");
   input.addEventListener("change", async () => {
@@ -646,43 +753,153 @@ function setupHiddenImageInput() {
     input.value = ""; // allow choosing the same file again later
     if (!file || !file.type.startsWith("image/") || !pendingUpload) return;
 
+    const upload = pendingUpload;
+    pendingUpload = null;
+
+    // Instant preview: an object URL just references the file already
+    // sitting in memory — no base64 encoding, no blocking — so the photo
+    // appears in its frame right away while the real processing happens
+    // in the background.
+    const previewUrl = URL.createObjectURL(file);
+    const frame = beginFramePreview(upload, previewUrl);
+
     let dataUrl;
     try {
       dataUrl = await compressImage(file);
     } catch (err) {
       console.error("Image processing failed:", err);
       showToastMessage("Couldn't read that image — try another one.");
+      URL.revokeObjectURL(previewUrl);
+      cancelFramePreview(upload, frame);
       return;
     }
 
-    switch (pendingUpload.type) {
-      case "month":
-        state.months[pendingUpload.index].image = dataUrl;
-        renderTimeline();
-        break;
-      case "gallery-replace":
-        state.gallery[pendingUpload.index].image = dataUrl;
-        renderGallery();
-        break;
-      case "gallery-add":
-        state.gallery.push({ image: dataUrl, caption: "New memory" });
-        renderGallery();
-        break;
-      case "polaroid-replace":
-        state.polaroids[pendingUpload.index].image = dataUrl;
-        renderPolaroids();
-        break;
-      case "polaroid-add":
-        state.polaroids.push({ image: dataUrl, caption: "New memory" });
-        renderPolaroids();
-        break;
-    }
-    pendingUpload = null;
+    URL.revokeObjectURL(previewUrl); // temporary preview no longer needed — avoid leaking memory
+    finalizeFramePreview(upload, frame, dataUrl);
     scheduleAutosave();
   });
 }
 
+/* Shows the picked photo immediately in exactly one frame. For "add"
+   actions, appends exactly one new gallery/polaroid item — the other
+   19 month cards / existing photos are never touched or re-rendered. */
+function beginFramePreview(upload, previewUrl) {
+  let frame;
+  switch (upload.type) {
+    case "month":
+      frame = document.querySelector(`.month-photo.photo-frame[data-index="${upload.index}"]`);
+      break;
+    case "gallery-replace":
+      frame = document.querySelector(`#galleryGrid .gallery-item[data-index="${upload.index}"] .photo-frame`);
+      break;
+    case "polaroid-replace":
+      frame = document.querySelector(`#polaroidWall .polaroid[data-index="${upload.index}"] .photo-frame`);
+      break;
+    case "gallery-add": {
+      upload.index = state.gallery.length; // the index this item will occupy once pushed
+      state.gallery.push({ image: null, caption: "New memory" });
+      frame = appendGalleryItem(state.gallery[upload.index], upload.index).querySelector(".photo-frame");
+      break;
+    }
+    case "polaroid-add": {
+      upload.index = state.polaroids.length;
+      state.polaroids.push({ image: null, caption: "New memory" });
+      frame = appendPolaroidItem(state.polaroids[upload.index], upload.index).querySelector(".photo-frame");
+      break;
+    }
+  }
+  setFramePreviewImage(frame, previewUrl);
+  return frame;
+}
+
+function setFramePreviewImage(frame, previewUrl) {
+  if (!frame) return;
+  frame.classList.add("photo-loading");
+  const actions = frame.querySelector(".photo-actions");
+  let img = frame.querySelector("img");
+  if (!img) {
+    img = document.createElement("img");
+    img.alt = "";
+    frame.insertBefore(img, actions || null);
+  }
+  img.src = previewUrl;
+  // Drop the placeholder emoji text node now that a real preview is showing.
+  Array.from(frame.childNodes).forEach(n => {
+    if (n.nodeType === Node.TEXT_NODE && n.textContent.trim()) n.remove();
+  });
+}
+
+/* Swaps the temporary object-URL preview for the final, compressed,
+   persistable image — touching only this same single frame. */
+function finalizeFramePreview(upload, frame, dataUrl) {
+  switch (upload.type) {
+    case "month": state.months[upload.index].image = dataUrl; break;
+    case "gallery-replace":
+    case "gallery-add": state.gallery[upload.index].image = dataUrl; break;
+    case "polaroid-replace":
+    case "polaroid-add": state.polaroids[upload.index].image = dataUrl; break;
+  }
+  if (!frame || !frame.isConnected) return; // frame vanished for some unrelated reason — nothing to update
+  frame.classList.remove("photo-loading");
+  switch (upload.type) {
+    case "month": frame.innerHTML = monthPhotoFrameHTML(state.months[upload.index], upload.index); break;
+    case "gallery-replace":
+    case "gallery-add": frame.innerHTML = galleryPhotoFrameHTML(state.gallery[upload.index], upload.index); break;
+    case "polaroid-replace":
+    case "polaroid-add": frame.innerHTML = polaroidPhotoFrameHTML(state.polaroids[upload.index], upload.index); break;
+  }
+}
+
+/* If reading/compressing the file fails, cleanly undo the optimistic
+   preview instead of leaving a broken or orphaned frame. */
+function cancelFramePreview(upload, frame) {
+  if (upload.type === "gallery-add") {
+    state.gallery.splice(upload.index, 1);
+    frame && frame.closest(".gallery-item") && frame.closest(".gallery-item").remove();
+  } else if (upload.type === "polaroid-add") {
+    state.polaroids.splice(upload.index, 1);
+    frame && frame.closest(".polaroid") && frame.closest(".polaroid").remove();
+  } else if (frame) {
+    frame.classList.remove("photo-loading");
+    const img = frame.querySelector("img");
+    if (img) img.remove();
+    const emoji = upload.type === "month" ? "📷" : "📸";
+    frame.insertBefore(document.createTextNode(emoji), frame.querySelector(".photo-actions"));
+  }
+}
+
+/* ----------------------------------------------------------------
+   compressImage — resizes to MAX_IMAGE_DIMENSION and re-encodes as
+   JPEG, WITHOUT cropping (the full image is always kept, aspect
+   ratio preserved; only its overall pixel size may shrink).
+   Prefers createImageBitmap, which decodes off the main thread in
+   supporting browsers, and canvas.toBlob, which encodes
+   asynchronously — unlike canvas.toDataURL, which blocks the main
+   thread while it encodes. Falls back to the classic Image()+
+   FileReader path for older browsers.
+   ---------------------------------------------------------------- */
 function compressImage(file, maxDim = MAX_IMAGE_DIMENSION, quality = IMAGE_QUALITY) {
+  if (window.createImageBitmap) {
+    return compressImageViaBitmap(file, maxDim, quality).catch(() => compressImageViaElement(file, maxDim, quality));
+  }
+  return compressImageViaElement(file, maxDim, quality);
+}
+
+async function compressImageViaBitmap(file, maxDim, quality) {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const { width, height } = fitWithinPreservingAspect(bitmap.width, bitmap.height, maxDim);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
+    return await canvasToDataURLAsync(canvas, quality);
+  } finally {
+    bitmap.close();
+  }
+}
+
+function compressImageViaElement(file, maxDim, quality) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("File read failed"));
@@ -690,21 +907,36 @@ function compressImage(file, maxDim = MAX_IMAGE_DIMENSION, quality = IMAGE_QUALI
       const img = new Image();
       img.onerror = () => reject(new Error("Image decode failed"));
       img.onload = () => {
-        let { width, height } = img;
-        if (width > maxDim || height > maxDim) {
-          if (width >= height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
-          else { width = Math.round(width * (maxDim / height)); height = maxDim; }
-        }
+        const { width, height } = fitWithinPreservingAspect(img.naturalWidth, img.naturalHeight, maxDim);
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        canvasToDataURLAsync(canvas, quality).then(resolve, reject);
       };
       img.src = reader.result;
     };
     reader.readAsDataURL(file);
+  });
+}
+
+/* Scales width/height down to fit within maxDim on the longest side —
+   aspect ratio is always preserved and the image is never cropped. */
+function fitWithinPreservingAspect(width, height, maxDim) {
+  if (width <= maxDim && height <= maxDim) return { width, height };
+  if (width >= height) return { width: maxDim, height: Math.round(height * (maxDim / width)) };
+  return { width: Math.round(width * (maxDim / height)), height: maxDim };
+}
+
+function canvasToDataURLAsync(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error("Encoding failed")); return; }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("File read failed"));
+      reader.onload = () => resolve(reader.result);
+      reader.readAsDataURL(blob); // blob is already downscaled + compressed, so this read is fast
+    }, "image/jpeg", quality);
   });
 }
 

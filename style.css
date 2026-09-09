@@ -202,6 +202,24 @@ body.editing .edit-only { display: inline-flex !important; }
 
 /* Image upload overlay shown per photo slot while editing */
 .photo-frame { position: relative; }
+/* UPLOAD LOADING STATE — transient only, shown while a picked photo is
+   being processed in the background. Doesn't alter the frame's resting
+   design; the spinner disappears the moment the final image is ready. */
+.photo-frame.photo-loading img { opacity: 0.55; transition: opacity 0.2s ease; }
+.photo-frame.photo-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 28px;
+  height: 28px;
+  border: 3px solid hsl(var(--shadow-color) / 0.22);
+  border-top-color: var(--rose);
+  border-radius: 50%;
+  animation: photoFrameSpin 0.8s linear infinite;
+  pointer-events: none;
+}
+@keyframes photoFrameSpin { to { transform: rotate(360deg); } }
 .photo-actions {
   position: absolute;
   inset: 0;
@@ -297,7 +315,19 @@ body.editing .remove-item-btn { display: flex; }
      glitching out of the envelope's corner. This keeps the whole screen
      — envelope included — above that decorative layer. */
   z-index: 6;
+  transition: opacity 0.55s ease, transform 0.55s ease;
 }
+/* Once the letter has risen out, the envelope scene itself dissolves and
+   scales in slightly (rather than being yanked away via display:none),
+   so the small paper visually hands off into the full-page letter behind
+   it instead of hard-cutting. */
+.envelope-screen.leaving { opacity: 0; transform: scale(1.03); pointer-events: none; }
+
+/* MAIN CONTENT fades in underneath while the envelope scene above it
+   dissolves — the two transitions overlap to read as one continuous
+   motion ("the paper became the page") instead of two separate cuts. */
+#mainContent { opacity: 1; transition: opacity 0.6s ease; }
+#mainContent.entering { opacity: 0; }
 /* NOTE: envelope-screen is toggled purely via the [hidden] attribute
    (display:none) — never via opacity alone — so it can never remain
    as an invisible, click-blocking layer on top of the page. */
@@ -314,6 +344,7 @@ body.editing .remove-item-btn { display: flex; }
 .envelope-instruction {
   font-family: var(--font-script); font-size: 1.3rem; color: var(--deep-rose);
   text-shadow: 0 1px 8px hsl(0 0% 100% / 0.9); /* extra readability insurance regardless of what's behind it */
+  margin-bottom: 14px; /* extra breathing room above the envelope, on top of the .envelope-screen gap */
 }
 
 .envelope {
@@ -336,19 +367,12 @@ body.editing .remove-item-btn { display: flex; }
   border-radius: var(--radius-sm);
   box-shadow: 0 14px 34px -10px hsl(30deg 30% 25% / 0.5);
   overflow: hidden;
+  z-index: 0;
 }
-/* Bottom fold creases, completing the classic envelope "X" pattern —
-   the top half of the X is the flap shape itself (below); these two
-   lines are the bottom flap's folds, which stay put and never move. */
-.envelope-back::before,
-.envelope-back::after {
-  content: ""; position: absolute; bottom: 0; height: 2px; width: 60.1%;
-  background: linear-gradient(90deg, transparent, hsl(32deg 35% 40% / 0.4), transparent);
-}
-.envelope-back::before { left: 0; transform-origin: 0% 50%; transform: rotate(-33.7deg); }
-.envelope-back::after { right: 0; transform-origin: 100% 50%; transform: rotate(33.7deg); }
 .envelope-letter-peek {
-  position: absolute; left: 8%; right: 8%; top: -6%; height: 70%;
+  /* Sits fully inside the envelope footprint (never above/beside it) so the
+     .envelope-pocket layer below can completely hide it while closed. */
+  position: absolute; left: 8%; right: 8%; top: 4%; height: 62%;
   background: var(--paper); border-radius: 6px 6px 0 0;
   /* Two faint stacked-paper edges peeking out behind the top sheet, for a
      little extra depth — like there's more than one page inside. */
@@ -356,10 +380,30 @@ body.editing .remove-item-btn { display: flex; }
     0 -4px 10px hsl(30deg 25% 25% / 0.15),
     3px 3px 0 -1px hsl(30deg 15% 88% / 0.9),
     6px 6px 0 -2px hsl(30deg 12% 82% / 0.7);
-  transition: transform 0.9s cubic-bezier(.2,.8,.2,1);
-  transition-delay: 0.28s; /* rises last, after the flap has begun lifting */
-  transform: translateY(0%); z-index: 1;
+  transition: transform 1.1s cubic-bezier(.22,.9,.32,1) 0.26s, box-shadow 1.1s ease 0.26s, z-index 0s 0.26s;
+  /* rises last, after the flap has begun lifting */
+  transform: translateY(0%) scale(1); transform-origin: 50% 100%; z-index: 1; /* behind the pocket + flap while closed */
 }
+/* The front pocket: the visible "face" of the closed envelope. It sits
+   above the letter and below the flap, so the letter is completely
+   contained and cannot stick out the front, sides, or bottom. */
+.envelope-pocket {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #F2E7C9, #E3D2A0);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  z-index: 2;
+}
+/* Bottom fold creases, completing the classic envelope "X" pattern —
+   the top half of the X is the flap shape itself (below); these two
+   lines are the bottom flap's folds, which stay put and never move. */
+.envelope-pocket::before,
+.envelope-pocket::after {
+  content: ""; position: absolute; bottom: 0; height: 2px; width: 60.1%;
+  background: linear-gradient(90deg, transparent, hsl(32deg 35% 40% / 0.4), transparent);
+}
+.envelope-pocket::before { left: 0; transform-origin: 0% 50%; transform: rotate(-33.7deg); }
+.envelope-pocket::after { right: 0; transform-origin: 100% 50%; transform: rotate(33.7deg); }
 .envelope-flap {
   position: absolute; inset: 0;
   background: linear-gradient(135deg, #E9D9AE, #D9C58C);
@@ -368,13 +412,13 @@ body.editing .remove-item-btn { display: flex; }
   transform-origin: top;
   transition: transform 0.8s cubic-bezier(.2,.8,.2,1);
   transition-delay: 0.12s; /* begins just after the seal starts releasing */
-  z-index: 2;
+  z-index: 3;
   box-shadow: 0 2px 6px hsl(30deg 30% 25% / 0.2);
 }
 .wax-seal {
   position: absolute; left: 50%; top: 38%; width: 50px; height: 46px;
   transform: translate(-50%, -50%);
-  z-index: 3;
+  z-index: 4; /* above everything while closed */
   transition: transform 0.35s ease, opacity 0.35s ease;
 }
 .wax-seal span {
@@ -391,7 +435,18 @@ body.editing .remove-item-btn { display: flex; }
 .envelope:not(.opened):active .wax-seal { transform: translate(-50%, -50%) scale(0.88); }
 .envelope.opened .envelope-flap { transform: rotateX(180deg); }
 .envelope.opened .wax-seal { opacity: 0; transform: translate(-50%, -50%) scale(0.4); transition-delay: 0s; }
-.envelope.opened .envelope-letter-peek { transform: translateY(-38%); }
+/* Rises above the pocket/flap (z-index 5) only once it starts sliding out,
+   matching the transition-delay above — never visible in front before then.
+   The slight scale-up as it rises is what sells the "growing towards you"
+   feel that leads into the crossfade to the full letter. */
+.envelope.opened .envelope-letter-peek {
+  transform: translateY(-86%) scale(1.08);
+  box-shadow:
+    0 -10px 26px hsl(30deg 25% 25% / 0.22),
+    3px 3px 0 -1px hsl(30deg 15% 88% / 0.9),
+    6px 6px 0 -2px hsl(30deg 12% 82% / 0.7);
+  z-index: 5;
+}
 
 /* Gentle idle motion so the envelope feels alive while waiting to be
    clicked — stops automatically once opened (scoped via :not(.opened)),
@@ -513,7 +568,7 @@ main { position: relative; }
 .month-card::after { content: '+'; float: right; font-size: 1.3rem; color: var(--rose); transition: transform 0.3s ease; }
 .month-card.expanded::after { transform: rotate(45deg); }
 .month-photo { margin-top: 12px; border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 16/10; background: var(--blush); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
-.month-photo img { width: 100%; height: 100%; object-fit: cover; }
+.month-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .month-caption { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; text-align: center; }
 
 /* ================= GALLERY ================= */
@@ -540,7 +595,7 @@ body.editing .polaroid-section .upload-label { display: flex; margin-left: auto;
 }
 .gallery-item:hover { transform: translateY(-4px) scale(1.02); }
 .gallery-item .photo-frame { aspect-ratio: 1/1; background: var(--blush); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 2rem; }
-.gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-item img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .gallery-caption { padding: 10px 12px; font-size: 0.9rem; color: var(--ink-soft); text-align: center; }
 
 /* Lightbox */
@@ -579,7 +634,7 @@ body.editing .polaroid-section .upload-label { display: flex; margin-left: auto;
 .polaroid { background: #fff; padding: 14px 14px 26px; width: 190px; box-shadow: 0 10px 22px -8px hsl(var(--shadow-color) / 0.4); transition: transform 0.3s ease; position: relative; }
 .polaroid:hover { transform: scale(1.05) rotate(0deg) !important; z-index: 5; }
 .polaroid .photo-frame { aspect-ratio: 1/1; background: var(--blush); display: flex; align-items: center; justify-content: center; overflow: hidden; font-size: 1.8rem; }
-.polaroid img { width: 100%; height: 100%; object-fit: cover; }
+.polaroid img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .polaroid-caption { font-family: var(--font-script); font-size: 1.2rem; text-align: center; color: var(--ink); margin-top: 10px; min-height: 1.3em; }
 
 /* ================= QUESTION ================= */
