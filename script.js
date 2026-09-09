@@ -382,10 +382,23 @@ function setupReplay() {
    PHOTO FRAME TEMPLATES — shared by the full renderers below AND by
    the single-frame updates in the upload flow, so both stay in sync
    and a one-photo upload never has to touch unrelated frames.
+
+   fitPhotoFrame(): the frame's CSS aspect-ratio (16/10, 1/1, etc.) is
+   only a placeholder default for the empty state. The moment a real
+   photo loads, this sets the FRAME's aspect-ratio to match the PHOTO's
+   own aspect ratio exactly — so the frame conforms to the picture
+   instead of the picture being boxed/cropped/letterboxed into a fixed
+   frame shape. Portrait, landscape, or square: the whole photo fills
+   the whole frame, no empty space, nothing cut off.
    ================================================================ */
+function fitPhotoFrame(img) {
+  if (img.naturalWidth && img.naturalHeight) {
+    img.parentElement.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+  }
+}
 function monthPhotoFrameHTML(m, i) {
   const photoInner = m.image
-    ? `<img src="${m.image}" alt="${escapeAttr(m.title)}" />`
+    ? `<img src="${m.image}" alt="${escapeAttr(m.title)}" onload="fitPhotoFrame(this)" />`
     : `📷`;
   return `
     ${photoInner}
@@ -396,7 +409,7 @@ function monthPhotoFrameHTML(m, i) {
   `;
 }
 function galleryPhotoFrameHTML(g, i) {
-  const inner = g.image ? `<img src="${g.image}" alt="${escapeAttr(g.caption)}" />` : `📸`;
+  const inner = g.image ? `<img src="${g.image}" alt="${escapeAttr(g.caption)}" onload="fitPhotoFrame(this)" />` : `📸`;
   return `
     ${inner}
     <div class="photo-actions edit-only">
@@ -405,7 +418,7 @@ function galleryPhotoFrameHTML(g, i) {
   `;
 }
 function polaroidPhotoFrameHTML(p, i) {
-  const inner = p.image ? `<img src="${p.image}" alt="${escapeAttr(p.caption)}" />` : `📸`;
+  const inner = p.image ? `<img src="${p.image}" alt="${escapeAttr(p.caption)}" onload="fitPhotoFrame(this)" />` : `📸`;
   return `
     ${inner}
     <div class="photo-actions edit-only">
@@ -820,6 +833,7 @@ function setFramePreviewImage(frame, previewUrl) {
   if (!img) {
     img = document.createElement("img");
     img.alt = "";
+    img.onload = () => fitPhotoFrame(img); // frame conforms to this photo's shape immediately, even during the preview
     frame.insertBefore(img, actions || null);
   }
   img.src = previewUrl;
@@ -861,6 +875,7 @@ function cancelFramePreview(upload, frame) {
     frame && frame.closest(".polaroid") && frame.closest(".polaroid").remove();
   } else if (frame) {
     frame.classList.remove("photo-loading");
+    frame.style.aspectRatio = ""; // fall back to the placeholder's default shape
     const img = frame.querySelector("img");
     if (img) img.remove();
     const emoji = upload.type === "month" ? "📷" : "📸";

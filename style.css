@@ -567,7 +567,7 @@ main { position: relative; }
 .month-toggle-zone { cursor: pointer; }
 .month-card::after { content: '+'; float: right; font-size: 1.3rem; color: var(--rose); transition: transform 0.3s ease; }
 .month-card.expanded::after { transform: rotate(45deg); }
-.month-photo { margin-top: 12px; border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 16/10; background: var(--blush); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+.month-photo { margin-top: 12px; border-radius: var(--radius-sm); overflow: hidden; /* aspect-ratio below is only the placeholder default — replaced inline by fitPhotoFrame() once a real photo loads, so the frame matches that photo's own shape exactly */ aspect-ratio: 16/10; background: var(--blush); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
 .month-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .month-caption { font-size: 0.85rem; color: var(--ink-soft); margin-top: 6px; text-align: center; }
 
