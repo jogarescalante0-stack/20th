@@ -128,6 +128,13 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .control-bar > * { pointer-events: auto; }
 
+/* Edit / Save / Clear All are hidden — the site now always opens straight
+   into Preview mode showing the already-saved content. Using an ID rule
+   here (rather than removing the buttons) keeps all the existing
+   edit/save/clear logic intact and easy to re-enable later; it just isn't
+   reachable from the page. The music toggle button is unaffected. */
+#editToggleBtn, #saveBtn, #clearBtn { display: none; }
+
 .ctrl-btn {
   background: var(--paper);
   color: var(--deep-rose);

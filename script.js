@@ -83,7 +83,7 @@ function makeDefaultState() {
 }
 
 let state = loadState();
-let isEditing = true; // start in edit mode so first-time visitors can fill things in
+let isEditing = false; // starts in Preview mode — the on-page Edit/Save/Clear controls are hidden (see CSS), so visitors always see the finished, already-saved content
 
 /* ================================================================
    STORAGE
