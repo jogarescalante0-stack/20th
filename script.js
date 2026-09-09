@@ -92,35 +92,41 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return makeDefaultState();
-    const parsed = JSON.parse(raw);
-    const defaults = makeDefaultState();
-    // Merge with defaults so new fields introduced later don't break old saves
-    const merged = deepMerge(defaults, parsed);
-    // Months are special-cased: a visitor's saved data might predate a later
-    // update that added more months (e.g. a save from when the site only had
-    // 12 months). The generic array-merge above takes the saved array as-is,
-    // which would silently cap the site back down to however many months
-    // existed when that save was made. Instead, always match the CURRENT
-    // number of months defined in makeDefaultState(), keeping any edits the
-    // visitor already made (matched by position) and filling in fresh
-    // defaults for any months that didn't exist yet in their saved copy.
-    merged.months = defaults.months.map((def, i) => {
-      const saved = Array.isArray(parsed.months) ? parsed.months[i] : null;
-      return saved ? { ...def, ...saved } : def;
-    });
-    // Reasons get the same treatment as months — a save from when the site
-    // had 12 reasons would otherwise keep showing all 12 forever, since the
-    // generic array-merge above just takes the saved array as-is. Always
-    // match the CURRENT number of reasons, keeping edited text by position.
-    merged.reasons = defaults.reasons.map((def, i) => {
-      const saved = Array.isArray(parsed.reasons) ? parsed.reasons[i] : null;
-      return typeof saved === "string" && saved.trim() ? saved : def;
-    });
-    return merged;
+    return mergeWithDefaults(JSON.parse(raw));
   } catch (err) {
     console.warn("Could not load saved data, starting fresh.", err);
     return makeDefaultState();
   }
+}
+
+/* Shared by loadState() (reading from localStorage) and the Import button
+   (reading from an exported .json file) — same safety net either way, so
+   an imported file behaves exactly like a normal saved session. */
+function mergeWithDefaults(parsed) {
+  const defaults = makeDefaultState();
+  // Merge with defaults so new fields introduced later don't break old saves
+  const merged = deepMerge(defaults, parsed);
+  // Months are special-cased: a visitor's saved data might predate a later
+  // update that added more months (e.g. a save from when the site only had
+  // 12 months). The generic array-merge above takes the saved array as-is,
+  // which would silently cap the site back down to however many months
+  // existed when that save was made. Instead, always match the CURRENT
+  // number of months defined in makeDefaultState(), keeping any edits the
+  // visitor already made (matched by position) and filling in fresh
+  // defaults for any months that didn't exist yet in their saved copy.
+  merged.months = defaults.months.map((def, i) => {
+    const saved = Array.isArray(parsed.months) ? parsed.months[i] : null;
+    return saved ? { ...def, ...saved } : def;
+  });
+  // Reasons get the same treatment as months — a save from when the site
+  // had 12 reasons would otherwise keep showing all 12 forever, since the
+  // generic array-merge above just takes the saved array as-is. Always
+  // match the CURRENT number of reasons, keeping edited text by position.
+  merged.reasons = defaults.reasons.map((def, i) => {
+    const saved = Array.isArray(parsed.reasons) ? parsed.reasons[i] : null;
+    return typeof saved === "string" && saved.trim() ? saved : def;
+  });
+  return merged;
 }
 
 function deepMerge(base, incoming) {
@@ -244,6 +250,46 @@ function setupControlBar() {
   });
 
   document.getElementById("saveBtn").addEventListener("click", () => saveState(true));
+
+  // EXPORT — downloads everything currently saved (text + photos) as one
+  // .json file, so it can be moved to another device/browser.
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "monthsary-data.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToastMessage("Exported");
+  });
+
+  // IMPORT — loads a previously-exported .json file into this browser and
+  // saves it, so this device now shows the same content as the one it
+  // was exported from.
+  document.getElementById("importBtn").addEventListener("click", () => {
+    document.getElementById("importFileInput").click();
+  });
+  document.getElementById("importFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = ""; // reset so choosing the same file again still fires "change"
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        state = mergeWithDefaults(JSON.parse(reader.result));
+        saveState(false);
+        renderAll();
+        showToastMessage("Imported");
+      } catch (err) {
+        console.error("Import failed:", err);
+        alert("That file couldn't be read. Please choose the .json file downloaded from \u201cExport\u201d.");
+      }
+    };
+    reader.readAsText(file);
+  });
 
   document.getElementById("clearBtn").addEventListener("click", () => {
     const sure = confirm("Clear ALL your entered text and photos? This cannot be undone.");
